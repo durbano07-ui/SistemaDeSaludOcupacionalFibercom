@@ -1,0 +1,35 @@
+# MariaDB 11.4 para desarrollo local.
+# Uso (desde la raíz):  pnpm db:up   /   pnpm db:down
+# La primera vez carga bd/01-estructura.sql (19 tablas). Para recargarla desde cero:
+#   docker compose -f docker/docker-compose.dev.yml down -v && pnpm db:up
+name: smo
+
+services:
+  mariadb:
+    image: mariadb:11.4
+    container_name: smo-mariadb
+    restart: unless-stopped
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_uca1400_ai_ci
+      - --default-time-zone=-05:00
+    environment:
+      MARIADB_ROOT_PASSWORD: root_local
+      MARIADB_DATABASE: smo_desarrollo
+      MARIADB_USER: smo
+      MARIADB_PASSWORD: smo_local
+      TZ: America/Guayaquil
+    ports:
+      - '${DB_PUERTO_HOST:-3306}:3306'
+    volumes:
+      - smo-mariadb-datos:/var/lib/mysql
+      - ../bd/01-estructura.sql:/docker-entrypoint-initdb.d/01-estructura.sql:ro
+    healthcheck:
+      test: ['CMD', 'healthcheck.sh', '--connect', '--innodb_initialized']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  smo-mariadb-datos:
+    name: smo-mariadb-datos
