@@ -1,0 +1,30 @@
+# Dependencias
+node_modules/
+
+# Compilados
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# Cliente de Prisma generado
+apps/api/src/generated/
+
+# Variables de entorno (nunca subir credenciales)
+.env
+.env.*
+!.env.example
+
+# Registros y temporales
+*.log
+npm-debug.log*
+pnpm-debug.log*
+.DS_Store
+.vite/
+.eslintcache
+
+# Editor (se comparten settings.json y extensions.json)
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/

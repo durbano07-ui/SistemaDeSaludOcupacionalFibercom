@@ -1,0 +1,47 @@
+{
+  "name": "smo",
+  "private": true,
+  "description": "Sistema de Medicina Ocupacional — FIBERCOM ECUADOR",
+  "type": "module",
+  "packageManager": "pnpm@12.23.0",
+  "engines": {
+    "node": ">=26"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @smo/shared build && concurrently -k -n shared,api,web -c yellow,blue,magenta \"pnpm --filter @smo/shared dev\" \"pnpm --filter @smo/api dev\" \"pnpm --filter @smo/web dev\"",
+    "build": "pnpm -r build",
+    "lint": "eslint . --max-warnings 0",
+    "test": "pnpm --filter @smo/shared build && pnpm -r test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "db:up": "docker compose --env-file .env -f docker/docker-compose.dev.yml up -d",
+    "db:down": "docker compose --env-file .env -f docker/docker-compose.dev.yml down",
+    "db:studio": "pnpm --filter @smo/api prisma:studio",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,mjs,cjs}": [
+      "eslint --fix --max-warnings 0",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml,scss,css,html}": "prettier --write"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^21.2.4",
+    "@commitlint/config-conventional": "^21.2.4",
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.6.6",
+    "concurrently": "^10.0.7",
+    "eslint": "^10.15.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.8",
+    "eslint-plugin-simple-import-sort": "^14.0.0",
+    "globals": "^17.14.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.2",
+    "prettier": "^3.10.1",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.73.0",
+    "vitest": "^5.1.1"
+  }
+}
