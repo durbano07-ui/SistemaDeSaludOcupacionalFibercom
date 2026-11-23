@@ -41,7 +41,10 @@ jobs:
       - name: Instalar dependencias
         run: pnpm install --frozen-lockfile
       - name: Cargar la estructura de la base
-        run: docker exec -i ${{ job.services.mariadb.id }} mariadb -u smo -psmo_local smo_desarrollo < bd/01-estructura.sql
+        run: |
+          for script in bd/01-estructura.sql bd/02-ampliacion-modelo.sql; do
+            docker exec -i ${{ job.services.mariadb.id }} mariadb -u root -proot_ci smo_desarrollo < "$script"
+          done
       - name: Lint
         run: pnpm lint
       - name: Pruebas

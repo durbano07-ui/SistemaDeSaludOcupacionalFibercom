@@ -1,8 +1,8 @@
 generator client {
   provider            = "prisma-client"
   output              = "../src/generated/prisma"
-  moduleFormat        = "esm"
   importFileExtension = "js"
+  moduleFormat        = "esm"
 }
 
 datasource db {
@@ -29,6 +29,7 @@ model Atencion {
   cie10             Cie10                @relation(fields: [idCie10], references: [idCie10], map: "fk_atencion_cie10")
   usuarioRegistra   Usuario              @relation("AtencionUsuarioRegistra", fields: [idUsuarioRegistra], references: [idUsuario], map: "fk_atencion_registra")
   usuario           Usuario              @relation("AtencionUsuario", fields: [idUsuario], references: [idUsuario], map: "fk_atencion_usuario")
+  certificado       CertificadoReposo?
   evolucionMedica   EvolucionMedica?
   recetaMedica      RecetaMedica?
 
@@ -200,18 +201,20 @@ model HistoriaClinica {
 
 /// Medicamentos del botiquín
 model Medicamento {
-  idMedicamento  Int               @id @default(autoincrement()) @map("id_medicamento") @db.UnsignedInt
-  nombre         String            @db.VarChar(150)
-  idPresentacion Int               @map("id_presentacion") @db.UnsignedInt
-  concentracion  String            @db.VarChar(50)
-  estado         MedicamentoEstado @default(activo)
-  creadoEn       DateTime          @default(now()) @map("creado_en") @db.DateTime(0)
-  actualizadoEn  DateTime          @default(now()) @updatedAt @map("actualizado_en") @db.DateTime(0)
-  presentacion   Presentacion      @relation(fields: [idPresentacion], references: [idPresentacion], map: "fk_medicamento_presentacion")
-  recetaDetalles RecetaDetalle[]
+  idMedicamento      Int               @id @default(autoincrement()) @map("id_medicamento") @db.UnsignedInt
+  nombre             String            @db.VarChar(150)
+  idPresentacion     Int               @map("id_presentacion") @db.UnsignedInt
+  concentracion      String            @db.VarChar(50)
+  grupoFarmacologico String?           @map("grupo_farmacologico") @db.VarChar(80)
+  estado             MedicamentoEstado @default(activo)
+  creadoEn           DateTime          @default(now()) @map("creado_en") @db.DateTime(0)
+  actualizadoEn      DateTime          @default(now()) @updatedAt @map("actualizado_en") @db.DateTime(0)
+  presentacion       Presentacion      @relation(fields: [idPresentacion], references: [idPresentacion], map: "fk_medicamento_presentacion")
+  recetaDetalles     RecetaDetalle[]
 
   @@unique([nombre, idPresentacion, concentracion], map: "uk_medicamento")
   @@index([idPresentacion], map: "ix_medicamento_presentacion")
+  @@index([grupoFarmacologico], map: "ix_medicamento_grupo")
   @@map("medicamento")
 }
 
@@ -264,6 +267,7 @@ model Usuario {
   idUsuario                 Int                             @id @default(autoincrement()) @map("id_usuario") @db.UnsignedInt
   idBase                    Int                             @map("id_base") @db.UnsignedInt
   idCargo                   Int                             @map("id_cargo") @db.UnsignedInt
+  idRol                     Int?                            @map("id_rol") @db.UnsignedInt
   cedula                    String                          @unique(map: "uk_usuario_cedula") @db.Char(10)
   nombres                   String                          @db.VarChar(100)
   apellidos                 String                          @db.VarChar(100)
@@ -272,24 +276,38 @@ model Usuario {
   correo                    String?                         @unique(map: "uk_usuario_correo") @db.VarChar(150)
   nombreUsuario             String?                         @unique(map: "uk_usuario_nombre_usuario") @map("nombre_usuario") @db.VarChar(50)
   contrasenaHash            String?                         @map("contrasena_hash") @db.VarChar(255)
+  intentosFallidos          Int                             @default(0) @map("intentos_fallidos") @db.UnsignedTinyInt
+  bloqueadoHasta            DateTime?                       @map("bloqueado_hasta") @db.DateTime(0)
+  totpSecreto               String?                         @map("totp_secreto") @db.VarChar(255)
+  totpActivo                Boolean                         @default(false) @map("totp_activo")
   codigoMedico              String?                         @map("codigo_medico") @db.VarChar(20)
+  ultimoAcceso              DateTime?                       @map("ultimo_acceso") @db.DateTime(0)
   estado                    UsuarioEstado                   @default(activo)
   creadoEn                  DateTime                        @default(now()) @map("creado_en") @db.DateTime(0)
   actualizadoEn             DateTime                        @default(now()) @updatedAt @map("actualizado_en") @db.DateTime(0)
+  fichasQueAsigno           AsignacionFicha[]               @relation("FichasQueAsigno")
+  fichasAsignadas           AsignacionFicha[]               @relation("FichasAsignadas")
   atencionesRegistradas     Atencion[]                      @relation("AtencionUsuarioRegistra")
   atenciones                Atencion[]                      @relation("AtencionUsuario")
+  auditoriasComoPaciente    Auditoria[]                     @relation("AuditoriasComoPaciente")
+  auditoriasRealizadas      Auditoria[]                     @relation("AuditoriasRealizadas")
   casos                     Caso[]
   evolucionesRegistradas    EvolucionMedica[]
   historiaClinica           HistoriaClinica?
+  sesiones                  Sesion[]
   base                      Base                            @relation(fields: [idBase], references: [idBase], map: "fk_usuario_base")
   cargo                     Cargo                           @relation(fields: [idCargo], references: [idCargo], map: "fk_usuario_cargo")
+  rol                       Rol?                            @relation(fields: [idRol], references: [idRol], onDelete: Restrict, onUpdate: Restrict, map: "fk_usuario_rol")
   discapacidades            UsuarioDiscapacidad[]
   enfermedadesCatastroficas UsuarioEnfermedadCatastrofica[]
   gruposVulnerables         UsuarioGrupoVulnerable[]
+  permisosOtorgados         UsuarioPermiso[]                @relation("PermisosOtorgados")
+  permisosExtra             UsuarioPermiso[]                @relation("PermisosExtra")
 
   @@index([apellidos, nombres], map: "ix_usuario_apellidos_nombres")
   @@index([idBase], map: "ix_usuario_base")
   @@index([idCargo], map: "ix_usuario_cargo")
+  @@index([idRol], map: "ix_usuario_rol")
   @@map("usuario")
 }
 
@@ -347,6 +365,151 @@ model UsuarioGrupoVulnerable {
   @@index([idGrupo], map: "ix_ugv_grupo")
   @@index([idUsuario], map: "ix_ugv_usuario")
   @@map("usuario_grupo_vulnerable")
+}
+
+/// Roles fijos del sistema; no se crean desde la interfaz
+model Rol {
+  idRol         Int          @id @default(autoincrement()) @map("id_rol") @db.UnsignedInt
+  codigo        String       @unique(map: "uk_rol_codigo") @db.VarChar(30)
+  nombre        String       @db.VarChar(80)
+  descripcion   String?      @db.VarChar(255)
+  creadoEn      DateTime     @default(now()) @map("creado_en") @db.DateTime(0)
+  actualizadoEn DateTime     @default(now()) @updatedAt @map("actualizado_en") @db.DateTime(0)
+  permisos      RolPermiso[]
+  usuarios      Usuario[]
+
+  @@map("rol")
+}
+
+/// Permisos que se verifican en cada endpoint de la API
+model Permiso {
+  idPermiso     Int              @id @default(autoincrement()) @map("id_permiso") @db.UnsignedInt
+  codigo        String           @unique(map: "uk_permiso_codigo") @db.VarChar(40)
+  nombre        String           @db.VarChar(100)
+  descripcion   String?          @db.VarChar(255)
+  creadoEn      DateTime         @default(now()) @map("creado_en") @db.DateTime(0)
+  actualizadoEn DateTime         @default(now()) @updatedAt @map("actualizado_en") @db.DateTime(0)
+  roles         RolPermiso[]
+  usuarios      UsuarioPermiso[]
+
+  @@map("permiso")
+}
+
+/// Permisos que trae cada rol
+model RolPermiso {
+  idRol     Int     @map("id_rol") @db.UnsignedInt
+  idPermiso Int     @map("id_permiso") @db.UnsignedInt
+  permiso   Permiso @relation(fields: [idPermiso], references: [idPermiso], map: "fk_rp_permiso")
+  rol       Rol     @relation(fields: [idRol], references: [idRol], map: "fk_rp_rol")
+
+  @@id([idRol, idPermiso])
+  @@index([idPermiso], map: "ix_rp_permiso")
+  @@map("rol_permiso")
+}
+
+/// Permisos extra de un usuario, además de los de su rol
+model UsuarioPermiso {
+  idUsuario       Int      @map("id_usuario") @db.UnsignedInt
+  idPermiso       Int      @map("id_permiso") @db.UnsignedInt
+  idUsuarioOtorga Int      @map("id_usuario_otorga") @db.UnsignedInt
+  otorgadoEn      DateTime @default(now()) @map("otorgado_en") @db.DateTime(0)
+  otorgante       Usuario  @relation("PermisosOtorgados", fields: [idUsuarioOtorga], references: [idUsuario], map: "fk_up_otorga")
+  permiso         Permiso  @relation(fields: [idPermiso], references: [idPermiso], map: "fk_up_permiso")
+  usuario         Usuario  @relation("PermisosExtra", fields: [idUsuario], references: [idUsuario], map: "fk_up_usuario")
+
+  @@id([idUsuario, idPermiso])
+  @@index([idPermiso], map: "ix_up_permiso")
+  @@index([idUsuarioOtorga], map: "ix_up_otorga")
+  @@map("usuario_permiso")
+}
+
+/// Cada inicio de sesión; guarda el token de renovación vigente
+model Sesion {
+  idSesion            BigInt              @id @default(autoincrement()) @map("id_sesion") @db.UnsignedBigInt
+  idUsuario           Int                 @map("id_usuario") @db.UnsignedInt
+  inicio              DateTime            @default(now()) @db.DateTime(0)
+  ultimaActividad     DateTime            @default(now()) @map("ultima_actividad") @db.DateTime(0)
+  fin                 DateTime?           @db.DateTime(0)
+  motivoCierre        MotivoCierreSesion? @map("motivo_cierre")
+  ip                  String              @db.VarChar(45)
+  agenteUsuario       String?             @map("agente_usuario") @db.VarChar(255)
+  tokenRenovacionHash String?             @unique(map: "uk_sesion_token") @map("token_renovacion_hash") @db.Char(64)
+  renovacionExpira    DateTime?           @map("renovacion_expira") @db.DateTime(0)
+  auditorias          Auditoria[]
+  usuario             Usuario             @relation(fields: [idUsuario], references: [idUsuario], onUpdate: Restrict, map: "fk_sesion_usuario")
+
+  @@index([idUsuario, inicio], map: "ix_sesion_usuario")
+  @@index([inicio], map: "ix_sesion_inicio")
+  @@map("sesion")
+}
+
+/// Registro inmutable de accesos y acciones; solo admite INSERT (triggers en la base).
+/// valorAnterior/valorNuevo son JSON en MariaDB (LONGTEXT + CHECK json_valid): guardar con JSON.stringify.
+model Auditoria {
+  idAuditoria      BigInt          @id @default(autoincrement()) @map("id_auditoria") @db.UnsignedBigInt
+  fecha            DateTime        @default(now())
+  idUsuario        Int?            @map("id_usuario") @db.UnsignedInt
+  idSesion         BigInt?         @map("id_sesion") @db.UnsignedBigInt
+  usuarioIntentado String?         @map("usuario_intentado") @db.VarChar(50)
+  accion           AccionAuditoria
+  modulo           String          @db.VarChar(40)
+  entidad          String?         @db.VarChar(40)
+  idEntidad        String?         @map("id_entidad") @db.VarChar(20)
+  idPaciente       Int?            @map("id_paciente") @db.UnsignedInt
+  descripcion      String?         @db.VarChar(255)
+  valorAnterior    String?         @map("valor_anterior") @db.LongText
+  valorNuevo       String?         @map("valor_nuevo") @db.LongText
+  ip               String?         @db.VarChar(45)
+  paciente         Usuario?        @relation("AuditoriasComoPaciente", fields: [idPaciente], references: [idUsuario], onDelete: Restrict, map: "fk_aud_paciente")
+  sesion           Sesion?         @relation(fields: [idSesion], references: [idSesion], onDelete: Restrict, map: "fk_aud_sesion")
+  usuario          Usuario?        @relation("AuditoriasRealizadas", fields: [idUsuario], references: [idUsuario], onDelete: Restrict, onUpdate: Restrict, map: "fk_aud_usuario")
+
+  @@index([idUsuario, fecha], map: "ix_aud_usuario_fecha")
+  @@index([idSesion], map: "ix_aud_sesion")
+  @@index([idPaciente, fecha], map: "ix_aud_paciente_fecha")
+  @@index([entidad, idEntidad], map: "ix_aud_entidad")
+  @@index([fecha], map: "ix_aud_fecha")
+  @@map("auditoria")
+}
+
+/// Certificado de reposo emitido en una atención (CER-2026-0001)
+model CertificadoReposo {
+  idCertificado Int      @id @default(autoincrement()) @map("id_certificado") @db.UnsignedInt
+  idAtencion    Int      @unique(map: "uk_certificado_atencion") @map("id_atencion") @db.UnsignedInt
+  codigo        String   @unique(map: "uk_certificado_codigo") @db.VarChar(20)
+  dias          Int      @db.UnsignedSmallInt
+  fechaInicio   DateTime @map("fecha_inicio") @db.Date
+  fechaFin      DateTime @map("fecha_fin") @db.Date
+  observacion   String?  @db.VarChar(255)
+  creadoEn      DateTime @default(now()) @map("creado_en") @db.DateTime(0)
+  actualizadoEn DateTime @default(now()) @updatedAt @map("actualizado_en") @db.DateTime(0)
+  atencion      Atencion @relation(fields: [idAtencion], references: [idAtencion], map: "fk_certificado_atencion")
+
+  @@index([fechaInicio, fechaFin], map: "ix_certificado_fechas")
+  @@map("certificado_reposo")
+}
+
+/// Fichas de evaluación ocupacional y matrices asignadas a un paciente
+model AsignacionFicha {
+  idAsignacion    Int                   @id @default(autoincrement()) @map("id_asignacion") @db.UnsignedInt
+  idUsuario       Int                   @map("id_usuario") @db.UnsignedInt
+  idUsuarioAsigna Int                   @map("id_usuario_asigna") @db.UnsignedInt
+  formato         FormatoFicha
+  fecha           DateTime              @db.Date
+  condicion       String?               @db.VarChar(80)
+  observacion     String?               @db.VarChar(255)
+  estado          AsignacionFichaEstado @default(activo)
+  /// Columna generada por la base (RN-14). NUNCA escribirla desde la aplicación
+  matriz202Activa Int?                  @unique(map: "uk_asignacion_matriz_202") @map("matriz_202_activa") @db.UnsignedInt
+  creadoEn        DateTime              @default(now()) @map("creado_en") @db.DateTime(0)
+  actualizadoEn   DateTime              @default(now()) @updatedAt @map("actualizado_en") @db.DateTime(0)
+  asignador       Usuario               @relation("FichasQueAsigno", fields: [idUsuarioAsigna], references: [idUsuario], map: "fk_asignacion_asigna")
+  paciente        Usuario               @relation("FichasAsignadas", fields: [idUsuario], references: [idUsuario], onUpdate: Restrict, map: "fk_asignacion_usuario")
+
+  @@index([idUsuario, fecha], map: "ix_asignacion_usuario_fecha")
+  @@index([idUsuarioAsigna], map: "ix_asignacion_asigna")
+  @@index([formato, fecha], map: "ix_asignacion_formato")
+  @@map("asignacion_ficha")
 }
 
 enum DepartamentoEstado {
@@ -430,4 +593,51 @@ enum UsuarioEstado {
   inactivo
 
   @@map("usuario_estado")
+}
+
+enum MotivoCierreSesion {
+  cerrada
+  expirada
+  revocada
+
+  @@map("sesion_motivo_cierre")
+}
+
+enum AccionAuditoria {
+  iniciar_sesion
+  cerrar_sesion
+  login_fallido
+  cuenta_bloqueada
+  leer
+  crear
+  actualizar
+  desactivar
+  activar
+  otorgar_permiso
+  quitar_permiso
+  imprimir
+  exportar
+  importar
+  acceso_bd
+  acceso_bd_fallido
+
+  @@map("auditoria_accion")
+}
+
+enum FormatoFicha {
+  ficha_ingreso
+  ficha_periodica
+  ficha_reintegro
+  ficha_retiro
+  matriz_gsg_r_202
+  matriz_gsg_r_177
+
+  @@map("asignacion_ficha_formato")
+}
+
+enum AsignacionFichaEstado {
+  activo
+  inactivo
+
+  @@map("asignacion_ficha_estado")
 }

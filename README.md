@@ -25,16 +25,19 @@ pnpm db:up
 ```
 
 Crea el contenedor `smo-mariadb` (MariaDB 11.4, base `smo_desarrollo`, usuario `smo`) y, la
-primera vez, carga `bd/01-estructura.sql` (19 tablas). Para empezar desde cero:
-
-```bash
-pnpm db:down && docker volume rm smo-mariadb-datos && pnpm db:up
-```
-
-Después de crear una base nueva, registre la migración base de Prisma:
+primera vez, carga `bd/01-estructura.sql` y `bd/02-ampliacion-modelo.sql` (27 tablas).
+En una base recién creada, registre en Prisma que esas migraciones ya están aplicadas
+(después de `pnpm install`):
 
 ```bash
 pnpm --filter @smo/api exec prisma migrate resolve --applied 0_init
+pnpm --filter @smo/api exec prisma migrate resolve --applied 1_ampliacion_modelo
+```
+
+Para empezar desde cero:
+
+```bash
+pnpm db:down && docker volume rm smo-mariadb-datos && pnpm db:up
 ```
 
 ## 3. Instalar
@@ -84,7 +87,7 @@ apps/
     src/lib/           cliente de la API, TanStack Query, formularios, fechas
 packages/
   shared/              esquemas Zod y tipos compartidos (salud, cédula)
-bd/01-estructura.sql   estructura oficial de la base (no se modifica)
+bd/                    01-estructura.sql y 02-ampliacion-modelo.sql (estructura oficial)
 docker/                MariaDB 11.4 para desarrollo
 ```
 

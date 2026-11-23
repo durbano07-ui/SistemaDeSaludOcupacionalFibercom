@@ -1,6 +1,6 @@
 # MariaDB 11.4 para desarrollo local.
 # Uso (desde la raíz):  pnpm db:up   /   pnpm db:down
-# La primera vez carga bd/01-estructura.sql (19 tablas). Para recargarla desde cero:
+# La primera vez carga bd/01-estructura.sql y bd/02-ampliacion-modelo.sql (27 tablas). Para recargarla desde cero:
 #   docker compose -f docker/docker-compose.dev.yml down -v && pnpm db:up
 name: smo
 
@@ -24,6 +24,7 @@ services:
     volumes:
       - smo-mariadb-datos:/var/lib/mysql
       - ../bd/01-estructura.sql:/docker-entrypoint-initdb.d/01-estructura.sql:ro
+      - ../bd/02-ampliacion-modelo.sql:/docker-entrypoint-initdb.d/02-ampliacion-modelo.sql:ro
     healthcheck:
       test: ['CMD', 'healthcheck.sh', '--connect', '--innodb_initialized']
       interval: 5s
