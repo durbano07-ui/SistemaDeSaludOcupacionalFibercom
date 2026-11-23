@@ -1,0 +1,38 @@
+@use 'sass:map';
+@use 'tema';
+@use '@carbon/react/scss/config' with (
+  $css--font-face: false // las fuentes IBM Plex se cargan desde @ibm/plex-sans y @ibm/plex-mono
+);
+@use '@carbon/react/scss/themes';
+@use '@carbon/react/scss/theme' with (
+  $theme: map.merge(themes.$white, tema.$tokens)
+);
+@use '@carbon/react';
+@use 'layouts'; // estilos propios, después de Carbon
+
+// Tokens de componentes de Carbon (se publican como variables CSS) y colores propios
+:root {
+  --cds-button-primary: #{tema.$rojo};
+  --cds-button-primary-hover: #{tema.$rojo-hover};
+  --cds-button-primary-active: #{tema.$rojo-activo};
+  --cds-button-tertiary: #{tema.$rojo};
+  --cds-button-tertiary-hover: #{tema.$rojo-hover};
+  --cds-button-tertiary-active: #{tema.$rojo-activo};
+  --cds-button-danger-primary: #{tema.$error};
+
+  --smo-rojo: #{tema.$rojo};
+  --smo-rojo-hover: #{tema.$rojo-hover};
+  --smo-amarillo: #{tema.$amarillo};
+  --smo-negro: #{tema.$negro};
+  --smo-error: #{tema.$error};
+}
+
+body {
+  color: var(--smo-negro);
+}
+
+code,
+pre,
+kbd {
+  font-family: 'IBM Plex Mono', monospace;
+}

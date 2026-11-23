@@ -1,0 +1,32 @@
+// =====================================================================
+//  Tema FIBERCOM sobre los tokens de IBM Carbon (tema base: White)
+//  - Rojo principal #C14130 (hover #A3361F): botones primarios y elementos activos
+//  - Amarillo #F3A600: solo acento, nunca como texto sobre blanco
+//  - Negro #1D1D1B: textos
+//  - Rojo de error #DA1E28: solo errores y alergias, siempre con ícono y texto
+//  - Esquinas cuadradas (Carbon no redondea; no agregar border-radius)
+// =====================================================================
+@use 'sass:map';
+
+$rojo: #c14130;
+$rojo-hover: #a3361f;
+$rojo-activo: #862c19;
+$amarillo: #f3a600;
+$negro: #1d1d1b;
+$error: #da1e28;
+
+/// Tokens de tema de Carbon que se reemplazan
+$tokens: (
+  text-primary: $negro,
+  icon-primary: $negro,
+  interactive: $rojo,
+  border-interactive: $rojo,
+  focus: $rojo,
+  link-primary: $rojo,
+  link-primary-hover: $rojo-hover,
+  link-visited: $rojo-hover,
+  background-brand: $rojo,
+  support-error: $error,
+  text-error: $error,
+  icon-interactive: $rojo,
+);
