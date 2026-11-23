@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  calidad:
+    runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
+      PORT: 3000
+      TZ: America/Guayaquil
+      DATABASE_URL: mysql://smo:smo_local@127.0.0.1:3306/smo_desarrollo
+      CORS_ORIGIN: http://localhost:5173
+      JWT_SECRET: ci-jwt-secreto-solo-para-pruebas-0123456789
+      JWT_REFRESH_SECRET: ci-refresh-secreto-solo-para-pruebas-0123456789
+      TOTP_ENCRYPTION_KEY: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+      LOG_LEVEL: silent
+    services:
+      mariadb:
+        image: mariadb:11.4
+        env:
+          MARIADB_ROOT_PASSWORD: root_ci
+          MARIADB_DATABASE: smo_desarrollo
+          MARIADB_USER: smo
+          MARIADB_PASSWORD: smo_local
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - name: Instalar dependencias
+        run: pnpm install --frozen-lockfile
+      - name: Cargar la estructura de la base
+        run: docker exec -i ${{ job.services.mariadb.id }} mariadb -u smo -psmo_local smo_desarrollo < bd/01-estructura.sql
+      - name: Lint
+        run: pnpm lint
+      - name: Pruebas
+        run: pnpm test
+      - name: Build
+        run: pnpm build
