@@ -1,0 +1,433 @@
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+/// Cada atención del consultorio. Fecha no futura: se valida en la API
+model Atencion {
+  idAtencion        Int                  @id @default(autoincrement()) @map("id_atencion") @db.UnsignedInt
+  codigo            String               @unique(map: "uk_atencion_codigo") @db.VarChar(20)
+  idUsuario         Int                  @map("id_usuario") @db.UnsignedInt
+  idUsuarioRegistra Int                  @map("id_usuario_registra") @db.UnsignedInt
+  idCaso            Int                  @map("id_caso") @db.UnsignedInt
+  idCie10           String               @map("id_cie10") @db.VarChar(10)
+  fecha             DateTime             @db.DateTime(0)
+  tipoAtencion      AtencionTipoAtencion @map("tipo_atencion")
+  tipoEvento        AtencionTipoEvento   @map("tipo_evento")
+  ocurrioEnTrabajo  Boolean?             @map("ocurrio_en_trabajo")
+  observaciones     String?              @db.Text
+  proximaCita       DateTime?            @map("proxima_cita") @db.Date
+  creadoEn          DateTime             @default(now()) @map("creado_en") @db.DateTime(0)
+  actualizadoEn     DateTime             @default(now()) @updatedAt @map("actualizado_en") @db.DateTime(0)
+  caso              Caso                 @relation(fields: [idCaso], references: [idCaso], map: "fk_atencion_caso")
+  cie10             Cie10                @relation(fields: [idCie10], references: [idCie10], map: "fk_atencion_cie10")
+  usuarioRegistra   Usuario              @relation("AtencionUsuarioRegistra", fields: [idUsuarioRegistra], references: [idUsuario], map: "fk_atencion_registra")
+  usuario           Usuario              @relation("AtencionUsuario", fields: [idUsuario], references: [idUsuario], map: "fk_atencion_usuario")
+  evolucionMedica   EvolucionMedica?
+  recetaMedica      RecetaMedica?
+
+  @@index([idCaso], map: "ix_atencion_caso")
+  @@index([idCie10], map: "ix_atencion_cie10")
+  @@index([fecha], map: "ix_atencion_fecha")
+  @@index([idUsuarioRegistra], map: "ix_atencion_registra")
+  @@index([idUsuario, fecha], map: "ix_atencion_usuario_fecha")
+  @@map("atencion")
+}
+
+/// Bases (sedes) de FIBERCOM
+model Base {
+  idBase        Int       @id @default(autoincrement()) @map("id_base") @db.UnsignedInt
+  nombre        String    @unique(map: "uk_base_nombre") @db.VarChar(80)
+  creadoEn      DateTime  @default(now()) @map("creado_en") @db.DateTime(0)
+  actualizadoEn DateTime  @default(now()) @updatedAt @map("actualizado_en") @db.DateTime(0)
+  usuarios      Usuario[]
+
+  @@map("base")
+}
+
+/// Cargos, cada uno dentro de un departamento
+model Cargo {
+  idCargo        Int          @id @default(autoincrement()) @map("id_cargo") @db.UnsignedInt
+  idDepartamento Int          @map("id_departamento") @db.UnsignedInt
+  nombre         String       @unique(map: "uk_cargo_nombre") @db.VarChar(120)
+  estado         CargoEstado  @default(activo)
+  creadoEn       DateTime     @default(now()) @map("creado_en") @db.DateTime(0)
+  actualizadoEn  DateTime     @default(now()) @updatedAt @map("actualizado_en") @db.DateTime(0)
+  departamento   Departamento @relation(fields: [idDepartamento], references: [idDepartamento], map: "fk_cargo_departamento")
+  usuarios       Usuario[]
+
+  @@index([idDepartamento], map: "ix_cargo_departamento")
+  @@map("cargo")
+}
+
+/// Agrupa las atenciones de un mismo problema de salud
+model Caso {
+  idCaso        Int        @id @default(autoincrement()) @map("id_caso") @db.UnsignedInt
+  idUsuario     Int        @map("id_usuario") @db.UnsignedInt
+  idCie10       String     @map("id_cie10") @db.VarChar(10)
+  estado        CasoEstado @default(abierto)
+  fechaApertura DateTime   @map("fecha_apertura") @db.Date
+  fechaCierre   DateTime?  @map("fecha_cierre") @db.Date
+  /// Columna generada en la base (PERSISTENT): solo lectura, nunca se escribe desde la API.
+  casoAbierto   Int?       @unique(map: "uk_caso_abierto") @map("caso_abierto") @db.UnsignedInt
+  creadoEn      DateTime   @default(now()) @map("creado_en") @db.DateTime(0)
+  actualizadoEn DateTime   @default(now()) @updatedAt @map("actualizado_en") @db.DateTime(0)
+  atenciones    Atencion[]
+  cie10         Cie10      @relation(fields: [idCie10], references: [idCie10], map: "fk_caso_cie10")
+  usuario       Usuario    @relation(fields: [idUsuario], references: [idUsuario], onUpdate: Restrict, map: "fk_caso_usuario")
+
+  @@index([idCie10], map: "ix_caso_cie10")
+  @@index([idUsuario, estado], map: "ix_caso_usuario")
+  @@map("caso")
+}
+
+/// Diagnósticos CIE-10 (archivo oficial del MSP)
+model Cie10 {
+  idCie10                   String                   @id @map("id_cie10") @db.VarChar(10)
+  descripcion               String                   @db.VarChar(255)
+  estado                    Cie10Estado              @default(activo)
+  creadoEn                  DateTime                 @default(now()) @map("creado_en") @db.DateTime(0)
+  actualizadoEn             DateTime                 @default(now()) @updatedAt @map("actualizado_en") @db.DateTime(0)
+  atenciones                Atencion[]
+  casos                     Caso[]
+  enfermedadesCatastroficas EnfermedadCatastrofica[]
+
+  @@fulltext([descripcion], map: "ft_cie10_descripcion")
+  @@map("cie10")
+}
+
+/// Departamentos de la empresa
+model Departamento {
+  idDepartamento Int                @id @default(autoincrement()) @map("id_departamento") @db.UnsignedInt
+  nombre         String             @unique(map: "uk_departamento_nombre") @db.VarChar(100)
+  estado         DepartamentoEstado @default(activo)
+  creadoEn       DateTime           @default(now()) @map("creado_en") @db.DateTime(0)
+  actualizadoEn  DateTime           @default(now()) @updatedAt @map("actualizado_en") @db.DateTime(0)
+  cargos         Cargo[]
+
+  @@map("departamento")
+}
+
+/// Catálogo de tipos de discapacidad
+model Discapacidad {
+  idDiscapacidad       Int                   @id @default(autoincrement()) @map("id_discapacidad") @db.UnsignedInt
+  nombre               String                @unique(map: "uk_discapacidad_nombre") @db.VarChar(80)
+  creadoEn             DateTime              @default(now()) @map("creado_en") @db.DateTime(0)
+  actualizadoEn        DateTime              @default(now()) @updatedAt @map("actualizado_en") @db.DateTime(0)
+  usuariosDiscapacidad UsuarioDiscapacidad[]
+
+  @@map("discapacidad")
+}
+
+/// Catálogo de enfermedades catastróficas (MSP)
+model EnfermedadCatastrofica {
+  idEnfermedad       Int                             @id @default(autoincrement()) @map("id_enfermedad") @db.UnsignedInt
+  nombre             String                          @unique(map: "uk_enfermedad_nombre") @db.VarChar(150)
+  idCie10            String?                         @map("id_cie10") @db.VarChar(10)
+  creadoEn           DateTime                        @default(now()) @map("creado_en") @db.DateTime(0)
+  actualizadoEn      DateTime                        @default(now()) @updatedAt @map("actualizado_en") @db.DateTime(0)
+  cie10              Cie10?                          @relation(fields: [idCie10], references: [idCie10], onDelete: Restrict, map: "fk_enfermedad_cie10")
+  usuariosEnfermedad UsuarioEnfermedadCatastrofica[]
+
+  @@index([idCie10], map: "ix_enfermedad_cie10")
+  @@map("enfermedad_catastrofica")
+}
+
+/// Detalle clínico y signos vitales de una atención
+model EvolucionMedica {
+  idEvolucion            Int      @id @default(autoincrement()) @map("id_evolucion") @db.UnsignedInt
+  idAtencion             Int      @unique(map: "uk_evolucion_atencion") @map("id_atencion") @db.UnsignedInt
+  idUsuarioRegistra      Int      @map("id_usuario_registra") @db.UnsignedInt
+  codigo                 String   @unique(map: "uk_evolucion_codigo") @db.VarChar(20)
+  motivoConsulta         String   @map("motivo_consulta") @db.Text
+  enfermedadActual       String   @map("enfermedad_actual") @db.Text
+  presionSistolica       Int?     @map("presion_sistolica") @db.UnsignedSmallInt
+  presionDiastolica      Int?     @map("presion_diastolica") @db.UnsignedSmallInt
+  frecuenciaCardiaca     Int?     @map("frecuencia_cardiaca") @db.UnsignedSmallInt
+  frecuenciaRespiratoria Int?     @map("frecuencia_respiratoria") @db.UnsignedTinyInt
+  saturacionO2           Int?     @map("saturacion_o2") @db.UnsignedTinyInt
+  temperatura            Decimal? @db.Decimal(4, 1)
+  examenFisico           String?  @map("examen_fisico") @db.Text
+  tratamiento            String?  @db.Text
+  observaciones          String?  @db.Text
+  creadoEn               DateTime @default(now()) @map("creado_en") @db.DateTime(0)
+  actualizadoEn          DateTime @default(now()) @updatedAt @map("actualizado_en") @db.DateTime(0)
+  atencion               Atencion @relation(fields: [idAtencion], references: [idAtencion], map: "fk_evolucion_atencion")
+  usuarioRegistra        Usuario  @relation(fields: [idUsuarioRegistra], references: [idUsuario], map: "fk_evolucion_registra")
+
+  @@index([idUsuarioRegistra], map: "ix_evolucion_registra")
+  @@map("evolucion_medica")
+}
+
+/// Catálogo de grupos vulnerables
+model GrupoVulnerable {
+  idGrupo       Int                      @id @default(autoincrement()) @map("id_grupo") @db.UnsignedInt
+  nombre        String                   @unique(map: "uk_grupo_nombre") @db.VarChar(80)
+  creadoEn      DateTime                 @default(now()) @map("creado_en") @db.DateTime(0)
+  actualizadoEn DateTime                 @default(now()) @updatedAt @map("actualizado_en") @db.DateTime(0)
+  usuariosGrupo UsuarioGrupoVulnerable[]
+
+  @@map("grupo_vulnerable")
+}
+
+/// Antecedentes del paciente; una historia por usuario
+model HistoriaClinica {
+  idHistoria              Int                            @id @default(autoincrement()) @map("id_historia") @db.UnsignedInt
+  idUsuario               Int                            @unique(map: "uk_historia_usuario") @map("id_usuario") @db.UnsignedInt
+  numeroHistoria          String                         @unique(map: "uk_historia_numero") @map("numero_historia") @db.VarChar(20)
+  fechaApertura           DateTime                       @map("fecha_apertura") @db.Date
+  antecedentesPersonales  String?                        @map("antecedentes_personales") @db.Text
+  antecedentesQuirurgicos String?                        @map("antecedentes_quirurgicos") @db.Text
+  antecedentesFamiliares  String?                        @map("antecedentes_familiares") @db.Text
+  alergias                String?                        @db.Text
+  consumoTabaco           HistoriaClinicaConsumoTabaco?  @map("consumo_tabaco")
+  consumoAlcohol          HistoriaClinicaConsumoAlcohol? @map("consumo_alcohol")
+  otrasSustancias         String?                        @map("otras_sustancias") @db.VarChar(255)
+  actividadFisica         String?                        @map("actividad_fisica") @db.VarChar(255)
+  medicacionHabitual      String?                        @map("medicacion_habitual") @db.Text
+  creadoEn                DateTime                       @default(now()) @map("creado_en") @db.DateTime(0)
+  actualizadoEn           DateTime                       @default(now()) @updatedAt @map("actualizado_en") @db.DateTime(0)
+  usuario                 Usuario                        @relation(fields: [idUsuario], references: [idUsuario], map: "fk_historia_usuario")
+
+  @@map("historia_clinica")
+}
+
+/// Medicamentos del botiquín
+model Medicamento {
+  idMedicamento  Int               @id @default(autoincrement()) @map("id_medicamento") @db.UnsignedInt
+  nombre         String            @db.VarChar(150)
+  idPresentacion Int               @map("id_presentacion") @db.UnsignedInt
+  concentracion  String            @db.VarChar(50)
+  estado         MedicamentoEstado @default(activo)
+  creadoEn       DateTime          @default(now()) @map("creado_en") @db.DateTime(0)
+  actualizadoEn  DateTime          @default(now()) @updatedAt @map("actualizado_en") @db.DateTime(0)
+  presentacion   Presentacion      @relation(fields: [idPresentacion], references: [idPresentacion], map: "fk_medicamento_presentacion")
+  recetaDetalles RecetaDetalle[]
+
+  @@unique([nombre, idPresentacion, concentracion], map: "uk_medicamento")
+  @@index([idPresentacion], map: "ix_medicamento_presentacion")
+  @@map("medicamento")
+}
+
+/// Formas de los medicamentos
+model Presentacion {
+  idPresentacion Int           @id @default(autoincrement()) @map("id_presentacion") @db.UnsignedInt
+  nombre         String        @unique(map: "uk_presentacion_nombre") @db.VarChar(50)
+  creadoEn       DateTime      @default(now()) @map("creado_en") @db.DateTime(0)
+  actualizadoEn  DateTime      @default(now()) @updatedAt @map("actualizado_en") @db.DateTime(0)
+  medicamentos   Medicamento[]
+
+  @@map("presentacion")
+}
+
+/// Medicamentos de la receta
+model RecetaDetalle {
+  idDetalle     Int          @id @default(autoincrement()) @map("id_detalle") @db.UnsignedInt
+  idReceta      Int          @map("id_receta") @db.UnsignedInt
+  idMedicamento Int          @map("id_medicamento") @db.UnsignedInt
+  cantidad      Int          @db.UnsignedSmallInt
+  dosis         String       @db.VarChar(50)
+  frecuencia    String       @db.VarChar(50)
+  duracion      String       @db.VarChar(50)
+  indicaciones  String?      @db.VarChar(255)
+  medicamento   Medicamento  @relation(fields: [idMedicamento], references: [idMedicamento], map: "fk_detalle_medicamento")
+  recetaMedica  RecetaMedica @relation(fields: [idReceta], references: [idReceta], map: "fk_detalle_receta")
+
+  @@unique([idReceta, idMedicamento], map: "uk_receta_medicamento")
+  @@index([idMedicamento], map: "ix_detalle_medicamento")
+  @@map("receta_detalle")
+}
+
+/// Receta emitida en una atención
+model RecetaMedica {
+  idReceta        Int             @id @default(autoincrement()) @map("id_receta") @db.UnsignedInt
+  idAtencion      Int             @unique(map: "uk_receta_atencion") @map("id_atencion") @db.UnsignedInt
+  advertencias    String?         @db.Text
+  signosAlarma    String?         @map("signos_alarma") @db.Text
+  recomendaciones String?         @db.Text
+  creadoEn        DateTime        @default(now()) @map("creado_en") @db.DateTime(0)
+  actualizadoEn   DateTime        @default(now()) @updatedAt @map("actualizado_en") @db.DateTime(0)
+  detalles        RecetaDetalle[]
+  atencion        Atencion        @relation(fields: [idAtencion], references: [idAtencion], map: "fk_receta_atencion")
+
+  @@map("receta_medica")
+}
+
+/// Personas: quienes inician sesión y trabajadores atendidos
+model Usuario {
+  idUsuario                 Int                             @id @default(autoincrement()) @map("id_usuario") @db.UnsignedInt
+  idBase                    Int                             @map("id_base") @db.UnsignedInt
+  idCargo                   Int                             @map("id_cargo") @db.UnsignedInt
+  cedula                    String                          @unique(map: "uk_usuario_cedula") @db.Char(10)
+  nombres                   String                          @db.VarChar(100)
+  apellidos                 String                          @db.VarChar(100)
+  sexo                      UsuarioSexo
+  fechaNacimiento           DateTime                        @map("fecha_nacimiento") @db.Date
+  correo                    String?                         @unique(map: "uk_usuario_correo") @db.VarChar(150)
+  nombreUsuario             String?                         @unique(map: "uk_usuario_nombre_usuario") @map("nombre_usuario") @db.VarChar(50)
+  contrasenaHash            String?                         @map("contrasena_hash") @db.VarChar(255)
+  codigoMedico              String?                         @map("codigo_medico") @db.VarChar(20)
+  estado                    UsuarioEstado                   @default(activo)
+  creadoEn                  DateTime                        @default(now()) @map("creado_en") @db.DateTime(0)
+  actualizadoEn             DateTime                        @default(now()) @updatedAt @map("actualizado_en") @db.DateTime(0)
+  atencionesRegistradas     Atencion[]                      @relation("AtencionUsuarioRegistra")
+  atenciones                Atencion[]                      @relation("AtencionUsuario")
+  casos                     Caso[]
+  evolucionesRegistradas    EvolucionMedica[]
+  historiaClinica           HistoriaClinica?
+  base                      Base                            @relation(fields: [idBase], references: [idBase], map: "fk_usuario_base")
+  cargo                     Cargo                           @relation(fields: [idCargo], references: [idCargo], map: "fk_usuario_cargo")
+  discapacidades            UsuarioDiscapacidad[]
+  enfermedadesCatastroficas UsuarioEnfermedadCatastrofica[]
+  gruposVulnerables         UsuarioGrupoVulnerable[]
+
+  @@index([apellidos, nombres], map: "ix_usuario_apellidos_nombres")
+  @@index([idBase], map: "ix_usuario_base")
+  @@index([idCargo], map: "ix_usuario_cargo")
+  @@map("usuario")
+}
+
+/// Discapacidad calificada de un usuario
+model UsuarioDiscapacidad {
+  idUsuarioDiscapacidad Int          @id @default(autoincrement()) @map("id_usuario_discapacidad") @db.UnsignedInt
+  idUsuario             Int          @map("id_usuario") @db.UnsignedInt
+  idDiscapacidad        Int          @map("id_discapacidad") @db.UnsignedInt
+  porcentaje            Int          @db.UnsignedTinyInt
+  numeroCarnet          String?      @map("numero_carnet") @db.VarChar(30)
+  fechaIngreso          DateTime     @map("fecha_ingreso") @db.Date
+  fechaSalida           DateTime?    @map("fecha_salida") @db.Date
+  observacion           String?      @db.VarChar(255)
+  creadoEn              DateTime     @default(now()) @map("creado_en") @db.DateTime(0)
+  actualizadoEn         DateTime     @default(now()) @updatedAt @map("actualizado_en") @db.DateTime(0)
+  discapacidad          Discapacidad @relation(fields: [idDiscapacidad], references: [idDiscapacidad], map: "fk_ud_discapacidad")
+  usuario               Usuario      @relation(fields: [idUsuario], references: [idUsuario], map: "fk_ud_usuario")
+
+  @@index([idDiscapacidad], map: "ix_ud_discapacidad")
+  @@index([idUsuario], map: "ix_ud_usuario")
+  @@map("usuario_discapacidad")
+}
+
+/// Enfermedad catastrófica de un usuario, por período
+model UsuarioEnfermedadCatastrofica {
+  idUsuarioEnfermedad    Int                    @id @default(autoincrement()) @map("id_usuario_enfermedad") @db.UnsignedInt
+  idUsuario              Int                    @map("id_usuario") @db.UnsignedInt
+  idEnfermedad           Int                    @map("id_enfermedad") @db.UnsignedInt
+  fechaIngreso           DateTime               @map("fecha_ingreso") @db.Date
+  fechaSalida            DateTime?              @map("fecha_salida") @db.Date
+  observacion            String?                @db.VarChar(255)
+  creadoEn               DateTime               @default(now()) @map("creado_en") @db.DateTime(0)
+  actualizadoEn          DateTime               @default(now()) @updatedAt @map("actualizado_en") @db.DateTime(0)
+  enfermedadCatastrofica EnfermedadCatastrofica @relation(fields: [idEnfermedad], references: [idEnfermedad], map: "fk_uec_enfermedad")
+  usuario                Usuario                @relation(fields: [idUsuario], references: [idUsuario], map: "fk_uec_usuario")
+
+  @@index([idEnfermedad], map: "ix_uec_enfermedad")
+  @@index([idUsuario], map: "ix_uec_usuario")
+  @@map("usuario_enfermedad_catastrofica")
+}
+
+/// Usuario en un grupo vulnerable, por período
+model UsuarioGrupoVulnerable {
+  idUsuarioGrupo  Int             @id @default(autoincrement()) @map("id_usuario_grupo") @db.UnsignedInt
+  idUsuario       Int             @map("id_usuario") @db.UnsignedInt
+  idGrupo         Int             @map("id_grupo") @db.UnsignedInt
+  fechaIngreso    DateTime        @map("fecha_ingreso") @db.Date
+  fechaSalida     DateTime?       @map("fecha_salida") @db.Date
+  observacion     String?         @db.VarChar(255)
+  creadoEn        DateTime        @default(now()) @map("creado_en") @db.DateTime(0)
+  actualizadoEn   DateTime        @default(now()) @updatedAt @map("actualizado_en") @db.DateTime(0)
+  grupoVulnerable GrupoVulnerable @relation(fields: [idGrupo], references: [idGrupo], map: "fk_ugv_grupo")
+  usuario         Usuario         @relation(fields: [idUsuario], references: [idUsuario], map: "fk_ugv_usuario")
+
+  @@index([idGrupo], map: "ix_ugv_grupo")
+  @@index([idUsuario], map: "ix_ugv_usuario")
+  @@map("usuario_grupo_vulnerable")
+}
+
+enum DepartamentoEstado {
+  activo
+  inactivo
+
+  @@map("departamento_estado")
+}
+
+enum Cie10Estado {
+  activo
+  inactivo
+
+  @@map("cie10_estado")
+}
+
+enum CasoEstado {
+  abierto
+  cerrado
+
+  @@map("caso_estado")
+}
+
+enum CargoEstado {
+  activo
+  inactivo
+
+  @@map("cargo_estado")
+}
+
+enum MedicamentoEstado {
+  activo
+  inactivo
+
+  @@map("medicamento_estado")
+}
+
+enum UsuarioSexo {
+  hombre
+  mujer
+
+  @@map("usuario_sexo")
+}
+
+enum AtencionTipoAtencion {
+  primera
+  subsecuente
+
+  @@map("atencion_tipo_atencion")
+}
+
+enum HistoriaClinicaConsumoTabaco {
+  no
+  ocasional
+  diario
+  ex_fumador
+
+  @@map("historia_clinica_consumo_tabaco")
+}
+
+enum AtencionTipoEvento {
+  enfermedad_comun
+  enfermedad_profesional
+  accidente_trabajo
+  incidente_trabajo
+
+  @@map("atencion_tipo_evento")
+}
+
+enum HistoriaClinicaConsumoAlcohol {
+  no
+  ocasional
+  semanal
+  ex_consumidor
+
+  @@map("historia_clinica_consumo_alcohol")
+}
+
+enum UsuarioEstado {
+  activo
+  inactivo
+
+  @@map("usuario_estado")
+}
