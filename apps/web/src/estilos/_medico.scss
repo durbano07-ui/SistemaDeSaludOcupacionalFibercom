@@ -185,6 +185,7 @@
 
     .cds--btn {
       flex: 0 0 auto;
+      inline-size: auto;
       max-inline-size: none;
       block-size: 3rem;
       padding-block: 0;
@@ -360,42 +361,28 @@
   }
 }
 
-// Imprimir: solo el formato de la receta o del certificado
+// Imprimir: solo el formato de la receta o del certificado. ModalDocumento monta una copia en
+// un portal directo bajo <body> (.smo-zona-impresion); al imprimir se oculta todo lo demás.
+.smo-zona-impresion {
+  display: none;
+}
+
 @media print {
   @page {
     size: A4;
     margin: 1.5cm;
   }
 
-  body * {
-    visibility: hidden;
+  body > :not(.smo-zona-impresion) {
+    display: none !important;
   }
 
-  .smo-impresion,
-  .smo-impresion * {
-    visibility: visible;
-  }
+  .smo-zona-impresion {
+    display: block;
 
-  .smo-impresion {
-    position: absolute;
-    inset: 0 auto auto 0;
-    inline-size: 100%;
-  }
-
-  .smo-modal--documento {
-    &.cds--modal,
-    .cds--modal-container,
-    .cds--modal-content {
-      position: static;
-      overflow: visible;
-      max-block-size: none;
-      background: none;
-      transform: none;
+    .smo-documento {
+      border: 0;
+      padding: 0;
     }
-  }
-
-  .smo-documento {
-    border: 0;
-    padding: 0;
   }
 }

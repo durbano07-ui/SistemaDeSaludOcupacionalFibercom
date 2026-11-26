@@ -9,6 +9,7 @@ import {
   ModalHeader,
 } from '@carbon/react';
 import type { AtencionDetalle } from '@smo/shared';
+import { createPortal } from 'react-dom';
 
 import { Logo } from '../componentes/Logo';
 import { useAtencionDetalle } from '../lib/consultas-medico';
@@ -201,7 +202,7 @@ export function ModalDocumento({ idAtencion, tipo, onCerrar }: ModalDocumentoPro
       className="smo-modal smo-modal--documento"
       aria-label={titulo}
     >
-      <ModalHeader title={titulo} closeModal={onCerrar} />
+      <ModalHeader title={titulo} closeModal={onCerrar} iconDescription="Cerrar" />
       <ModalBody>
         {consulta.isPending ? (
           <InlineLoading description="Cargando…" />
@@ -220,6 +221,14 @@ export function ModalDocumento({ idAtencion, tipo, onCerrar }: ModalDocumentoPro
             {tipo === 'receta' ? <Receta detalle={detalle} /> : <Certificado detalle={detalle} />}
           </div>
         )}
+        {disponible &&
+          createPortal(
+            // Copia que solo se ve al imprimir (ver _medico.scss)
+            <div className="smo-zona-impresion" aria-hidden="true">
+              {tipo === 'receta' ? <Receta detalle={detalle} /> : <Certificado detalle={detalle} />}
+            </div>,
+            document.body,
+          )}
       </ModalBody>
       <ModalFooter className="smo-modal__pie">
         <Button kind="secondary" onClick={onCerrar}>
