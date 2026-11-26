@@ -161,3 +161,30 @@ export function enviar<T extends z.ZodType>(
 export async function pedirSinRespuesta(ruta: string, opciones?: RequestInit): Promise<void> {
   await pedirRespuesta(ruta, opciones);
 }
+
+/** Nombre del archivo de `Content-Disposition: attachment; filename="…"`. */
+function nombreDeArchivo(cabecera: string | null, porDefecto: string): string {
+  const coincidencia = /filename="?([^";]+)"?/i.exec(cabecera ?? '');
+  return coincidencia?.[1] ?? porDefecto;
+}
+
+/**
+ * Descarga un archivo de la API (Excel, PDF) con el access token y lo guarda en el equipo.
+ * Devuelve el nombre del archivo.
+ */
+export async function descargar(ruta: string, porDefecto = 'reporte'): Promise<string> {
+  const respuesta = await pedirRespuesta(ruta);
+  const nombre = nombreDeArchivo(respuesta.headers.get('Content-Disposition'), porDefecto);
+  const url = URL.createObjectURL(await respuesta.blob());
+  try {
+    const enlace = document.createElement('a');
+    enlace.href = url;
+    enlace.download = nombre;
+    document.body.append(enlace);
+    enlace.click();
+    enlace.remove();
+  } finally {
+    setTimeout(() => URL.revokeObjectURL(url), 1_000);
+  }
+  return nombre;
+}
