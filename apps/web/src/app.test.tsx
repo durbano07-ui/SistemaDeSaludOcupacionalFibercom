@@ -125,13 +125,15 @@ describe('Pantalla del médico', () => {
     }
   });
 
-  it('"Reportes" avisa que estará disponible próximamente', async () => {
+  it('"Reportes" abre la pantalla de reportes sin la tarjeta del paciente', async () => {
     const usuario = userEvent.setup();
-    renderizarEn('/medico', { usuario: USUARIO_MEDICO });
+    const { router } = renderizarEn('/medico', { usuario: USUARIO_MEDICO });
 
     await usuario.click(await screen.findByRole('button', { name: 'Reportes' }));
 
-    expect(screen.getByText('Disponible próximamente.')).toBeInTheDocument();
+    expect(await screen.findByRole('tab', { name: 'Registro mensual' })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/medico/reportes');
+    expect(screen.queryByText('No se ha seleccionado ningún paciente')).not.toBeInTheDocument();
   });
 
   it('los enlaces anteriores (/medico/pacientes) llevan a la pantalla del médico', async () => {
