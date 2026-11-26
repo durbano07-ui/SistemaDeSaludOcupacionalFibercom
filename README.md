@@ -54,8 +54,10 @@ Defina `SEED_ADMIN_PASSWORD` y `SEED_MEDICO_PASSWORD` en `.env` y ejecute:
 pnpm db:seed
 ```
 
-Crea `admin` (Administrador) y `medico` (Médico ocupacional) con datos ficticios. Si ya existen,
-no los modifica. No corre con `NODE_ENV=production`.
+Crea `admin` (Administrador) y `medico` (Médico ocupacional) y, además, datos clínicos FICTICIOS:
+departamentos y cargos, 30 trabajadores (Guaranda y San Miguel), 60 códigos CIE-10, 25
+medicamentos y unas 40 atenciones de los últimos 4 meses (un paciente con 12). No duplica lo que
+ya existe y no corre con `NODE_ENV=production`.
 
 ## 5. Desarrollo
 
@@ -73,8 +75,15 @@ Ver la base con Prisma Studio: `pnpm db:studio`.
 
 ## 6. Pruebas y calidad
 
+Las pruebas de integración usan la base **`smo_pruebas`** (nunca la de desarrollo). Un contenedor
+nuevo la crea solo; en uno que ya existía, créela (o recréela desde cero) con:
+
 ```bash
-pnpm test     # Vitest: shared, api (unitarias + integración con la base) y web
+pnpm db:pruebas
+```
+
+```bash
+pnpm test     # Vitest: shared, api (unitarias + integración con smo_pruebas) y web
 pnpm lint     # ESLint
 pnpm format   # Prettier
 pnpm build    # compila shared, api y web
@@ -112,25 +121,48 @@ En la web, `usePermiso('codigo')` o `<Permitido permiso="codigo">` ocultan lo qu
 puede usar. Auditoría: `AuditoriaService.registrar({ accion, modulo, ... })` toma el usuario, la
 sesión y la IP de la petición.
 
+## Atenciones médicas
+
+Pantalla del médico (`/medico`): tarjeta del paciente, búsqueda de pacientes, pestañas Atenciones
+y Consultas anteriores, nueva atención (evolución, signos vitales, receta, certificado) y receta o
+certificado listos para imprimir.
+
+| Endpoint (`/api/v1`)                                                                                                                                 | Permiso          |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| `GET /pacientes?q=` · `GET /pacientes/:id` · `GET /pacientes/:id/atenciones?mes=AAAA-MM` · `GET /pacientes/:id/atenciones/historial?pagina=&tamano=` | `datos_clinicos` |
+| `GET /atenciones/:id`                                                                                                                                | `datos_clinicos` |
+| `POST /atenciones` · `GET /cie10?q=` · `GET /medicamentos?q=`                                                                                        | `atenciones`     |
+
+- Toda la atención (caso, atención, evolución, receta, detalle, certificado) se guarda en una
+  transacción (`registro-atencion.ts`). Primera: cierra el caso abierto y abre otro; subsecuente:
+  se suma al caso abierto (409 si no hay).
+- Códigos ATE/EVO/CER-AAAA-NNNN por año: `SELECT … FOR UPDATE` dentro de la transacción y hasta 3
+  reintentos ante choques (índice único o deadlock).
+- Alergias: si un medicamento coincide con `historia_clinica.alergias`, la API responde 422 hasta
+  que llegue `recetarDeTodosModos: true`; la advertencia queda en `receta_medica.advertencias`.
+- Fechas: instantes en UTC en la base y hora de Ecuador en la interfaz; columnas DATE como
+  'AAAA-MM-DD' sin conversión. Las reglas compartidas viven en `packages/shared/src/atenciones`.
+
 ## Estructura
 
 ```
 apps/
   api/                 NestJS 12 + Prisma 7 (adaptador MariaDB)
-    prisma/            schema.prisma (de `prisma db pull`), migraciones y seed.ts
-    src/modules/       un módulo por dominio (salud, auth, auditoria)
+    prisma/            schema.prisma (de `prisma db pull`), migraciones, seed.ts y seed-clinico.ts
+    src/modules/       un módulo por dominio (salud, auth, auditoria, pacientes, atenciones, catalogos)
     src/common/        filtro Problem Details (RFC 9457), pipe Zod, contexto de petición
     src/config/        validación de variables de entorno
     test/              pruebas de integración (Supertest)
   web/                 React 19 + Vite 8 + IBM Carbon (tema FIBERCOM)
     src/layouts/       layouts de administrador y médico
     src/auth/          sesión (ProveedorAuth), rutas protegidas, usePermiso
+    src/medico/        pantalla del médico: tarjeta, búsqueda, pestañas, nueva atención, documentos
     src/paginas/       páginas (Login, Estado)
     src/lib/           cliente de la API, TanStack Query, formularios, fechas
 packages/
-  shared/              esquemas Zod y tipos compartidos (auth, salud, cédula)
+  shared/              esquemas Zod, reglas y tipos compartidos (auth, atenciones, pacientes, fechas)
 bd/                    01-estructura.sql y 02-ampliacion-modelo.sql (estructura oficial)
-docker/                MariaDB 11.4 para desarrollo
+docker/                MariaDB 11.4 para desarrollo y creación de smo_pruebas
 ```
 
 ## Base de datos y Prisma
