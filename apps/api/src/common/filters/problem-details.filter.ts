@@ -28,6 +28,7 @@ const TITULOS: Record<number, string> = {
   413: 'Contenido demasiado grande',
   415: 'Tipo de contenido no admitido',
   422: 'No se pudo procesar la solicitud',
+  423: 'Cuenta bloqueada',
   429: 'Demasiadas solicitudes',
   500: 'Error interno del servidor',
   503: 'Servicio no disponible',

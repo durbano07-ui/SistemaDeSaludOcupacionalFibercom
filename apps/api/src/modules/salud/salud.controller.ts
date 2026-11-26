@@ -3,9 +3,11 @@ import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { type RespuestaSalud, respuestaSaludSchema } from '@smo/shared';
 
 import { esquemaOpenApi } from '../../common/openapi.js';
+import { Publico } from '../auth/decoradores/publico.decorator.js';
 import { SaludService } from './salud.service.js';
 
 @ApiTags('Salud')
+@Publico()
 @Controller('salud')
 export class SaludController {
   constructor(private readonly saludService: SaludService) {}

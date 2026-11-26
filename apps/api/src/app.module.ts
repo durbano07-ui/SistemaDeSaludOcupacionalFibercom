@@ -1,7 +1,10 @@
 import { type DynamicModule, Global, Module } from '@nestjs/common';
+import { ScheduleModule } from '@nestjs/schedule';
 import { LoggerModule } from 'nestjs-pino';
 
 import { ENTORNO, type Entorno } from './config/entorno.js';
+import { AuditoriaModule } from './modules/auditoria/auditoria.module.js';
+import { AuthModule } from './modules/auth/auth.module.js';
 import { SaludModule } from './modules/salud/salud.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 
@@ -34,7 +37,10 @@ export class AppModule {
                 : undefined,
           },
         }),
+        ScheduleModule.forRoot(),
         PrismaModule,
+        AuditoriaModule,
+        AuthModule,
         SaludModule,
       ],
       providers: [{ provide: ENTORNO, useValue: entorno }],

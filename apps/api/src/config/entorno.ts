@@ -2,7 +2,15 @@ import { z } from 'zod';
 
 const NIVELES_LOG = ['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'] as const;
 
-/** Variables de entorno que la API necesita para arrancar. Todas son obligatorias. */
+/** Duración tipo `15m`, `1h`, `30s` (formato de jsonwebtoken). */
+const duracionSchema = z
+  .string()
+  .regex(/^\d+[smhd]$/, 'debe ser un número seguido de s, m, h o d (por ejemplo 15m)');
+
+/**
+ * Variables de entorno que la API necesita para arrancar. Son obligatorias, salvo los
+ * parámetros de sesión (JWT_EXPIRES_IN…BLOQUEO_MINUTOS), que tienen un valor por defecto.
+ */
 export const entornoSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']),
   PORT: z.coerce.number().int().min(1).max(65535),
@@ -12,6 +20,10 @@ export const entornoSchema = z.object({
     .refine((url) => /^(mysql|mariadb):\/\//.test(url), 'debe empezar con mysql:// o mariadb://'),
   CORS_ORIGIN: z.url(),
   JWT_SECRET: z.string().min(32, 'debe tener al menos 32 caracteres'),
+  JWT_EXPIRES_IN: duracionSchema.default('15m'),
+  REFRESH_EXPIRES_DAYS: z.coerce.number().int().min(1).max(90).default(7),
+  MAX_INTENTOS: z.coerce.number().int().min(1).max(20).default(5),
+  BLOQUEO_MINUTOS: z.coerce.number().int().min(1).max(1440).default(15),
   JWT_REFRESH_SECRET: z.string().min(32, 'debe tener al menos 32 caracteres'),
   TOTP_ENCRYPTION_KEY: z
     .base64('debe estar en base64')

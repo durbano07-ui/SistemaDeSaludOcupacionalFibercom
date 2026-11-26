@@ -19,6 +19,21 @@ describe('validarEntorno', () => {
     expect(validarEntorno(valido).PORT).toBe(3000);
   });
 
+  it('aplica los valores por defecto de la sesión', () => {
+    expect(validarEntorno(valido)).toMatchObject({
+      JWT_EXPIRES_IN: '15m',
+      REFRESH_EXPIRES_DAYS: 7,
+      MAX_INTENTOS: 5,
+      BLOQUEO_MINUTOS: 15,
+    });
+  });
+
+  it('rechaza una duración de JWT mal escrita', () => {
+    expect(() => validarEntorno({ ...valido, JWT_EXPIRES_IN: '15 minutos' })).toThrow(
+      'JWT_EXPIRES_IN: debe ser un número seguido de s, m, h o d',
+    );
+  });
+
   it('dice qué variable falta', () => {
     const { JWT_SECRET: _omitida, ...sinSecreto } = valido;
     expect(() => validarEntorno(sinSecreto)).toThrow(EntornoInvalidoError);
