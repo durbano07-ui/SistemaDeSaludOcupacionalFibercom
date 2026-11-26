@@ -16,6 +16,7 @@
     "format:check": "prettier --check .",
     "db:up": "docker compose --env-file .env -f docker/docker-compose.dev.yml up -d",
     "db:down": "docker compose --env-file .env -f docker/docker-compose.dev.yml down",
+    "db:seed": "pnpm --filter @smo/shared build && pnpm --filter @smo/api db:seed",
     "db:studio": "pnpm --filter @smo/api prisma:studio",
     "prepare": "husky"
   },

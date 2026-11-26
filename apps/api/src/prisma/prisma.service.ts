@@ -5,7 +5,7 @@ import { ENTORNO, type Entorno } from '../config/entorno.js';
 import { PrismaClient } from '../generated/prisma/client.js';
 
 /** Convierte DATABASE_URL (mysql://usuario:clave@host:puerto/base) a la configuración del pool. */
-function configuracionPool(databaseUrl: string) {
+export function configuracionPool(databaseUrl: string) {
   const url = new URL(databaseUrl);
   return {
     host: url.hostname,
