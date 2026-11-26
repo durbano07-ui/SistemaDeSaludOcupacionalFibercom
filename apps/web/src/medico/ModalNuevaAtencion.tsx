@@ -306,6 +306,41 @@ export function ModalNuevaAtencion({ paciente, onCerrar, onGuardada }: ModalNuev
               {...register('enfermedadActual')}
             />
 
+            {/* Signos vitales */}
+            <Accordion>
+              <AccordionItem title="Signos vitales (opcional)">
+                <div className="smo-formulario__signos">
+                  {CAMPOS_SIGNOS.map(({ nombre, etiqueta }) => (
+                    <TextInput
+                      key={nombre}
+                      id={`signo-${nombre}`}
+                      labelText={etiqueta}
+                      inputMode="decimal"
+                      invalid={Boolean(errors.signosVitales?.[nombre])}
+                      invalidText={errors.signosVitales?.[nombre]?.message}
+                      {...register(`signosVitales.${nombre}`)}
+                    />
+                  ))}
+                </div>
+                {alertasSignos.length > 0 && (
+                  <InlineNotification
+                    kind="warning"
+                    lowContrast
+                    hideCloseButton
+                    title="Valores fuera de lo normal"
+                    subtitle={alertasSignos.map((a) => a.mensaje).join(' · ')}
+                  />
+                )}
+              </AccordionItem>
+            </Accordion>
+
+            <TextArea
+              id="atencion-examen"
+              labelText="Examen físico"
+              rows={3}
+              {...register('examenFisico')}
+            />
+
             {/* Diagnóstico */}
             <ComboBox<Cie10>
               id="atencion-cie10"
@@ -355,41 +390,6 @@ export function ModalNuevaAtencion({ paciente, onCerrar, onGuardada }: ModalNuev
                 <RadioButton id="trabajo-no" labelText="No" value="no" />
               </RadioButtonGroup>
             )}
-
-            {/* Signos vitales */}
-            <Accordion>
-              <AccordionItem title="Signos vitales (opcional)">
-                <div className="smo-formulario__signos">
-                  {CAMPOS_SIGNOS.map(({ nombre, etiqueta }) => (
-                    <TextInput
-                      key={nombre}
-                      id={`signo-${nombre}`}
-                      labelText={etiqueta}
-                      inputMode="decimal"
-                      invalid={Boolean(errors.signosVitales?.[nombre])}
-                      invalidText={errors.signosVitales?.[nombre]?.message}
-                      {...register(`signosVitales.${nombre}`)}
-                    />
-                  ))}
-                </div>
-                {alertasSignos.length > 0 && (
-                  <InlineNotification
-                    kind="warning"
-                    lowContrast
-                    hideCloseButton
-                    title="Valores fuera de lo normal"
-                    subtitle={alertasSignos.map((a) => a.mensaje).join(' · ')}
-                  />
-                )}
-              </AccordionItem>
-            </Accordion>
-
-            <TextArea
-              id="atencion-examen"
-              labelText="Examen físico"
-              rows={3}
-              {...register('examenFisico')}
-            />
             <TextArea
               id="atencion-tratamiento"
               labelText="Tratamiento"
