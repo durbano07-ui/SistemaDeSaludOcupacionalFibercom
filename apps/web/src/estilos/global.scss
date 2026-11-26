@@ -9,6 +9,7 @@
 );
 @use '@carbon/react';
 @use 'layouts'; // estilos propios, después de Carbon
+@use 'login';
 
 // Tokens de componentes de Carbon (se publican como variables CSS) y colores propios
 :root {
