@@ -14,6 +14,12 @@ import { Grafico } from '../componentes/graficos/Grafico';
 import { useModulos, useRendimiento, useUsuariosActivos } from '../lib/consultas-reportes';
 import { dayjs, formatearFechaHora, ZONA_HORARIA } from '../lib/fecha';
 
+/** 32,4 (coma decimal, como se escribe en Ecuador). */
+const ms = (valor: number | null | undefined) =>
+  valor === null || valor === undefined
+    ? '—'
+    : valor.toLocaleString('es-EC', { maximumFractionDigits: 1 });
+
 function TarjetaIndicador({
   titulo,
   valor,
@@ -70,11 +76,11 @@ export default function PaginaEstadisticas() {
           valor={
             rendimiento.data?.promedioMs === null || !rendimiento.data
               ? '—'
-              : `${rendimiento.data.promedioMs} ms`
+              : `${ms(rendimiento.data.promedioMs)} ms`
           }
           detalle={
             rendimiento.data
-              ? `${rendimiento.data.peticiones} peticiones · p95 ${rendimiento.data.p95Ms ?? '—'} ms (${rango === '1h' ? 'última hora' : 'últimas 24 h'})`
+              ? `${rendimiento.data.peticiones} peticiones · p95 ${ms(rendimiento.data.p95Ms)} ms (${rango === '1h' ? 'última hora' : 'últimas 24 h'})`
               : ''
           }
           cargando={rendimiento.isPending}
