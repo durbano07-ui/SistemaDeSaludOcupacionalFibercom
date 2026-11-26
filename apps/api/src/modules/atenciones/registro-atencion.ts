@@ -87,6 +87,16 @@ export async function registrarAtencion(
     throw new BadRequestException('El diagnóstico CIE-10 no existe o está inactivo');
   }
 
+  const adicionales = datos.diagnosticosAdicionales;
+  if (adicionales.length > 0) {
+    const encontrados = await prisma.cie10.count({
+      where: { idCie10: { in: adicionales }, estado: 'activo' },
+    });
+    if (encontrados !== new Set(adicionales).size) {
+      throw new BadRequestException('Algún diagnóstico adicional no existe o está inactivo');
+    }
+  }
+
   // La base exige proxima_cita > CAST(fecha AS DATE) con `fecha` en UTC: después de las 19:00
   // de Ecuador el día UTC ya es el siguiente.
   if (datos.proximaCita && datos.proximaCita <= deFechaSql(fecha)) {
@@ -187,6 +197,15 @@ export async function registrarAtencion(
             },
             select: { idAtencion: true },
           });
+          if (adicionales.length > 0) {
+            await tx.atencionDiagnostico.createMany({
+              data: adicionales.map((idCie10, indice) => ({
+                idAtencion: atencion.idAtencion,
+                idCie10,
+                orden: indice + 1,
+              })),
+            });
+          }
 
           const codigoEvolucion = await siguienteCodigo(tx, 'evolucion', anio);
           const signos = datos.signosVitales;

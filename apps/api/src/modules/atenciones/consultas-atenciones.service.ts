@@ -27,6 +27,10 @@ const SELECCION_LISTADO = {
     },
   },
   cie10: { select: { idCie10: true, descripcion: true } },
+  diagnosticosAdicionales: {
+    orderBy: { orden: 'asc' },
+    select: { cie10: { select: { idCie10: true, descripcion: true } } },
+  },
   evolucionMedica: { select: { motivoConsulta: true } },
   recetaMedica: { select: { idReceta: true } },
   certificado: { select: { idCertificado: true } },
@@ -49,6 +53,10 @@ function aListada(fila: FilaListado): AtencionListada {
     cargo: fila.usuario.cargo.nombre,
     motivo: fila.evolucionMedica?.motivoConsulta ?? '',
     diagnostico: { codigo: fila.cie10.idCie10, descripcion: fila.cie10.descripcion },
+    diagnosticosAdicionales: fila.diagnosticosAdicionales.map(({ cie10 }) => ({
+      codigo: cie10.idCie10,
+      descripcion: cie10.descripcion,
+    })),
     tieneReceta: fila.recetaMedica !== null,
     tieneCertificado: fila.certificado !== null,
   };
@@ -96,6 +104,7 @@ export class ConsultasAtencionesService {
       where: { idAtencion },
       include: {
         cie10: true,
+        diagnosticosAdicionales: { orderBy: { orden: 'asc' }, include: { cie10: true } },
         usuario: {
           include: { cargo: { include: { departamento: true } }, base: true },
         },
@@ -126,6 +135,10 @@ export class ConsultasAtencionesService {
       observaciones: a.observaciones,
       proximaCita: a.proximaCita ? deFechaSql(a.proximaCita) : null,
       diagnostico: { codigo: a.cie10.idCie10, descripcion: a.cie10.descripcion },
+      diagnosticosAdicionales: a.diagnosticosAdicionales.map(({ cie10 }) => ({
+        codigo: cie10.idCie10,
+        descripcion: cie10.descripcion,
+      })),
       paciente: {
         id: p.idUsuario,
         apellidos: p.apellidos,

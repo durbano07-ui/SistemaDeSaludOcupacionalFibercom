@@ -33,6 +33,7 @@ export class AtencionesService {
         tipoAtencion: guardada.tipoAtencion,
         tipoEvento: datos.tipoEvento,
         idCie10: datos.idCie10,
+        diagnosticosAdicionales: datos.diagnosticosAdicionales,
         fecha: datos.fecha,
         idCaso: guardada.idCaso,
         idCasoCerrado,

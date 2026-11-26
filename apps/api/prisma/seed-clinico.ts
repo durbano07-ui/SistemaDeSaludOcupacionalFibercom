@@ -212,6 +212,8 @@ interface Escenario {
   signosAlarma?: string;
   reposo?: number;
   laboral?: boolean;
+  /** Diagnósticos CIE-10 adicionales al principal. */
+  adicionales?: string[];
 }
 
 const ESCENARIOS: Escenario[] = [
@@ -255,6 +257,7 @@ const ESCENARIOS: Escenario[] = [
   },
   {
     cie10: 'J06.9',
+    adicionales: ['R51'],
     motivo: 'Dolor de garganta y congestión',
     enfermedad: 'Cuadro de 2 días de rinorrea, odinofagia y malestar general.',
     examen: 'Faringe congestiva, sin exudado. Pulmones limpios.',
@@ -432,6 +435,7 @@ const ESCENARIOS: Escenario[] = [
   },
   {
     cie10: 'S93.4',
+    adicionales: ['S80.0'],
     motivo: 'Torcedura de tobillo',
     enfermedad: 'Torcedura del tobillo derecho al bajar de una escalera en un poste.',
     examen: 'Edema y dolor en el ligamento peroneo anterior, marcha claudicante.',
@@ -702,6 +706,7 @@ export async function sembrarDatosClinicos(prisma: PrismaClient, idMedico: numbe
       enfermedadActual:
         tipo === 'subsecuente' ? `Evolución favorable. ${e.enfermedad}` : e.enfermedad,
       idCie10: e.cie10,
+      diagnosticosAdicionales: e.adicionales,
       tipoEvento: e.laboral ? 'accidente_trabajo' : 'enfermedad_comun',
       ocurrioEnTrabajo: e.laboral ? true : undefined,
       signosVitales: {

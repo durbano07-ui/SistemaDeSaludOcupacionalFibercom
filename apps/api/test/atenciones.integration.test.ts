@@ -373,6 +373,70 @@ describe('Atenciones médicas (integración)', () => {
     expect(pagina2.atenciones.at(-1)?.tipoAtencion).toBe('primera');
   });
 
+  it('diagnósticos adicionales: se guardan en orden, salen en el detalle y en los listados', async () => {
+    const idPaciente = await pacienteNuevo(prisma);
+    // Un adicional S exige "¿Ocurrió en el trabajo?" aunque el principal no lo sea (RN-05)
+    const sinPregunta = await registrar(
+      atencion(idPaciente, { diagnosticosAdicionales: ['S61.0'] }),
+    ).expect(400);
+    expect(sinPregunta.body.errores).toContainEqual({
+      campo: 'ocurrioEnTrabajo',
+      mensaje: 'Indica si ocurrió en el trabajo',
+    });
+
+    const creada = atencionRegistradaSchema.parse(
+      (
+        await registrar(
+          atencion(idPaciente, {
+            diagnosticosAdicionales: ['S61.0', 'J06.9'],
+            ocurrioEnTrabajo: false,
+          }),
+        ).expect(201)
+      ).body,
+    );
+
+    const filas = await prisma.atencionDiagnostico.findMany({
+      where: { idAtencion: creada.id },
+      orderBy: { orden: 'asc' },
+    });
+    expect(filas.map((f) => [f.orden, f.idCie10])).toEqual([
+      [1, 'S61.0'],
+      [2, 'J06.9'],
+    ]);
+    // El caso se abre con el diagnóstico principal
+    expect(await prisma.caso.findUnique({ where: { idCaso: creada.idCaso } })).toMatchObject({
+      idCie10: 'M54.5',
+    });
+
+    const detalle = atencionDetalleSchema.parse(
+      (await obtener(`/atenciones/${creada.id}`).expect(200)).body,
+    );
+    expect(detalle.diagnosticosAdicionales.map((d) => d.codigo)).toEqual(['S61.0', 'J06.9']);
+    const historial = historialAtencionesSchema.parse(
+      (await obtener(`/pacientes/${idPaciente}/atenciones/historial`).expect(200)).body,
+    );
+    expect(historial.atenciones[0]?.diagnosticosAdicionales.map((d) => d.codigo)).toEqual([
+      'S61.0',
+      'J06.9',
+    ]);
+  });
+
+  it('diagnóstico adicional inexistente o repetido → 400 sin guardar nada', async () => {
+    const idPaciente = await pacienteNuevo(prisma);
+    const inexistente = await registrar(
+      atencion(idPaciente, { diagnosticosAdicionales: ['Z99.99'] }),
+    ).expect(400);
+    expect(inexistente.body.detail).toBe('Algún diagnóstico adicional no existe o está inactivo');
+    const repetido = await registrar(
+      atencion(idPaciente, { diagnosticosAdicionales: ['M54.5'] }),
+    ).expect(400);
+    expect(repetido.body.errores).toContainEqual({
+      campo: 'diagnosticosAdicionales.0',
+      mensaje: 'Este diagnóstico ya está en la atención',
+    });
+    expect(await prisma.atencion.count({ where: { idUsuario: idPaciente } })).toBe(0);
+  });
+
   it('buscadores de CIE-10 (código o texto) y de medicamentos (nombre o grupo)', async () => {
     const porCodigo = await obtener('/cie10?q=m54').expect(200);
     expect(porCodigo.body).toContainEqual({
