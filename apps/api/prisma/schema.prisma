@@ -305,6 +305,7 @@ model Usuario {
   gruposVulnerables         UsuarioGrupoVulnerable[]
   permisosOtorgados         UsuarioPermiso[]                @relation("PermisosOtorgados")
   permisosExtra             UsuarioPermiso[]                @relation("PermisosExtra")
+  metasSstActualizadas      MetaSst[]
 
   @@index([apellidos, nombres], map: "ix_usuario_apellidos_nombres")
   @@index([idBase], map: "ix_usuario_base")
@@ -489,6 +490,22 @@ model AtencionDiagnostico {
   @@map("atencion_diagnostico")
 }
 
+/// Metas SST del informe trimestral; el médico las edita desde Reportes
+model MetaSst {
+  idMeta             Int              @id @default(autoincrement()) @map("id_meta") @db.UnsignedInt
+  indicador          MetaSstIndicador @unique(map: "uk_meta_indicador")
+  texto              String           @db.VarChar(60)
+  tipo               MetaSstTipo
+  limite             Decimal?         @db.Decimal(7, 2)
+  idUsuarioActualiza Int?             @map("id_usuario_actualiza") @db.UnsignedInt
+  creadoEn           DateTime         @default(now()) @map("creado_en") @db.DateTime(0)
+  actualizadoEn      DateTime         @default(now()) @updatedAt @map("actualizado_en") @db.DateTime(0)
+  usuarioActualiza   Usuario?         @relation(fields: [idUsuarioActualiza], references: [idUsuario], onDelete: Restrict, onUpdate: Restrict, map: "fk_meta_actualiza")
+
+  @@index([idUsuarioActualiza], map: "ix_meta_actualiza")
+  @@map("meta_sst")
+}
+
 /// Certificado de reposo emitido en una atención (CER-2026-0001)
 model CertificadoReposo {
   idCertificado Int      @id @default(autoincrement()) @map("id_certificado") @db.UnsignedInt
@@ -657,4 +674,22 @@ enum AsignacionFichaEstado {
   inactivo
 
   @@map("asignacion_ficha_estado")
+}
+
+enum MetaSstIndicador {
+  enfermedad_comun
+  enfermedad_profesional
+  accidente_trabajo
+  incidente_trabajo
+  total_atenciones
+
+  @@map("meta_sst_indicador")
+}
+
+enum MetaSstTipo {
+  porcentaje_maximo
+  casos_maximo
+  informativa
+
+  @@map("meta_sst_tipo")
 }
