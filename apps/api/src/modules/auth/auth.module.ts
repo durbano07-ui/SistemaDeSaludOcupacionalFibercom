@@ -39,6 +39,6 @@ import { SesionesTarea } from './sesiones.tarea.js';
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: PermisosGuard },
   ],
-  exports: [AuthService, ContrasenasService],
+  exports: [AuthService, ContrasenasService, JwtModule],
 })
 export class AuthModule {}

@@ -8,6 +8,7 @@ import { AtencionesModule } from './modules/atenciones/atenciones.module.js';
 import { AuditoriaModule } from './modules/auditoria/auditoria.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { CatalogosModule } from './modules/catalogos/catalogos.module.js';
+import { EstadisticasModule } from './modules/estadisticas/estadisticas.module.js';
 import { PacientesModule } from './modules/pacientes/pacientes.module.js';
 import { ReportesModule } from './modules/reportes/reportes.module.js';
 import { SaludModule } from './modules/salud/salud.module.js';
@@ -52,6 +53,7 @@ export class AppModule {
         AtencionesModule,
         PdfModule,
         ReportesModule,
+        EstadisticasModule,
       ],
       providers: [{ provide: ENTORNO, useValue: entorno }],
       exports: [ENTORNO],
