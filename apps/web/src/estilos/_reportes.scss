@@ -139,25 +139,31 @@
 }
 
 .smo-barra-porcentaje {
-  position: relative;
-  min-inline-size: 8rem;
-  block-size: 1.5rem;
-  background-color: var(--cds-layer-accent-01, #e0e0e0);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-inline-size: 11rem;
+
+  // El texto va al lado de la barra (no encima), para que se lea bien
+  &__texto {
+    flex: 0 0 4.5rem;
+    order: -1;
+    font-weight: 600;
+    text-align: end;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__pista {
+    position: relative;
+    flex: 1;
+    block-size: 0.75rem;
+    background-color: var(--cds-layer-accent-01, #e0e0e0);
+  }
 
   &__relleno {
     position: absolute;
     inset: 0 auto 0 0;
     background-color: var(--smo-rojo);
-  }
-
-  &__texto {
-    position: relative;
-    display: block;
-    padding-inline: 0.5rem;
-    line-height: 1.5rem;
-    color: var(--smo-negro);
-    font-weight: 600;
-    text-shadow: 0 0 3px #fff;
   }
 }
 

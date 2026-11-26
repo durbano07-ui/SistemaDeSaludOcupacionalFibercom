@@ -52,11 +52,12 @@ export function PestanaMorbilidad({ filtros }: { filtros: FiltrosAplicados }) {
                     <TableCell className="smo-numero">{f.casos}</TableCell>
                     <TableCell>
                       <div className="smo-barra-porcentaje">
-                        <span
-                          className="smo-barra-porcentaje__relleno"
-                          style={{ inlineSize: `${f.porcentaje ?? 0}%` }}
-                          aria-hidden="true"
-                        />
+                        <span className="smo-barra-porcentaje__pista" aria-hidden="true">
+                          <span
+                            className="smo-barra-porcentaje__relleno"
+                            style={{ inlineSize: `${f.porcentaje ?? 0}%` }}
+                          />
+                        </span>
                         <span className="smo-barra-porcentaje__texto">
                           {textoPorcentaje(f.porcentaje)}
                         </span>
