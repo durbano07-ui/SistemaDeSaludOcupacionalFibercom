@@ -7,11 +7,8 @@ import { PrimeraOpcionPermitida } from './componentes/PrimeraOpcionPermitida';
 import { SinPermiso } from './componentes/SinPermiso';
 import { LayoutAdministrador } from './layouts/LayoutAdministrador';
 import { LayoutMedico } from './layouts/LayoutMedico';
-import {
-  OPCIONES_ADMINISTRADOR,
-  OPCIONES_MEDICO,
-  type OpcionNavegacion,
-} from './layouts/navegacion';
+import { OPCIONES_ADMINISTRADOR, type OpcionNavegacion } from './layouts/navegacion';
+import { PantallaMedico } from './medico/PantallaMedico';
 import { Inicio } from './paginas/Inicio';
 import { Login } from './paginas/Login';
 
@@ -67,8 +64,9 @@ export const rutas: RouteObject[] = [
               </RutaProtegida>
             ),
             children: [
-              { index: true, element: <PrimeraOpcionPermitida opciones={OPCIONES_MEDICO} /> },
-              ...rutasDeOpciones(OPCIONES_MEDICO),
+              { index: true, element: <PantallaMedico /> },
+              // Enlaces anteriores (/medico/pacientes, /medico/reportes) llevan a la pantalla única
+              { path: '*', element: <Navigate to="/medico" replace /> },
             ],
           },
         ],

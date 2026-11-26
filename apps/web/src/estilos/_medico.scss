@@ -1,0 +1,401 @@
+// Pantalla del médico: tarjeta del paciente a la izquierda; acciones y pestañas a la derecha.
+// En celular la tarjeta pasa arriba y las tablas se desplazan dentro de su caja.
+.smo-medico-contenido {
+  padding-block-start: 3rem; // alto del encabezado fijo
+}
+
+.smo-medico {
+  display: grid;
+  grid-template-columns: minmax(16rem, 20rem) minmax(0, 1fr);
+  align-items: start;
+  gap: 1.5rem;
+  padding: 1.5rem 2rem 2rem;
+
+  @media (max-width: 66rem) {
+    grid-template-columns: minmax(0, 1fr);
+    padding-inline: 1rem;
+  }
+
+  &__principal {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-inline-size: 0;
+  }
+}
+
+.smo-contenedor.cds--tile {
+  background-color: #fff;
+  border: 1px solid var(--cds-border-subtle);
+}
+
+.smo-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.smo-pestanas .cds--tab-content {
+  padding-inline: 0;
+}
+
+.smo-barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-block-end: 1rem;
+}
+
+.smo-vacio,
+.smo-ayuda {
+  padding-block: 1rem;
+  color: var(--cds-text-secondary);
+}
+
+// ---------------------------------------------------------------- tarjeta
+.smo-tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  background-color: #fff;
+  border: 1px solid var(--cds-border-subtle);
+
+  &--vacia {
+    align-items: center;
+    padding-block: 2rem;
+    color: var(--cds-text-secondary);
+    text-align: center;
+  }
+
+  &__nombre {
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  &__datos {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.25rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  &__dato {
+    display: contents;
+
+    dt {
+      color: var(--cds-text-secondary);
+    }
+  }
+
+  &__sin-alergias {
+    font-size: 0.875rem;
+    color: var(--cds-text-secondary);
+  }
+
+  &__condiciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+
+  &__caso {
+    padding-block-start: 0.75rem;
+    border-block-start: 1px solid var(--cds-border-subtle);
+    font-size: 0.875rem;
+  }
+
+  &__etiqueta {
+    display: block;
+    margin-block-end: 0.25rem;
+    color: var(--cds-text-secondary);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  &__desde {
+    color: var(--cds-text-secondary);
+  }
+}
+
+// Alergias: rojo de error, siempre con ícono y texto
+.smo-alergia {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-inline-start: 3px solid var(--smo-error);
+  background-color: #fff1f1;
+  color: var(--smo-error);
+  font-size: 0.875rem;
+
+  svg {
+    flex-shrink: 0;
+    margin-block-start: 0.125rem;
+    fill: var(--smo-error);
+  }
+}
+
+// ----------------------------------------------------------------- tablas
+.smo-tabla-desplazable {
+  overflow-x: auto;
+
+  .cds--data-table {
+    min-inline-size: 44rem;
+  }
+}
+
+.smo-celda-accion {
+  text-align: end;
+}
+
+.smo-paginacion {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding-block-start: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.smo-busqueda {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+
+  .cds--form-item {
+    flex: 1;
+  }
+}
+
+// ------------------------------------------------------------------ modales
+.smo-modal {
+  // Botones normales, alineados a la derecha
+  .smo-modal__pie.cds--modal-footer {
+    justify-content: flex-end;
+    gap: 0.5rem;
+    padding-inline: 1rem;
+    background-color: transparent;
+    block-size: auto;
+    padding-block: 1rem;
+
+    .cds--btn {
+      flex: 0 0 auto;
+      max-inline-size: none;
+      block-size: 3rem;
+      padding-block: 0;
+      align-items: center;
+    }
+  }
+
+  @media (max-width: 42rem) {
+    .cds--modal-container {
+      inline-size: 100%;
+      max-inline-size: 100%;
+      block-size: 100%;
+      max-block-size: 100%;
+      inset-block-start: 0;
+    }
+  }
+}
+
+.smo-formulario__fila {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  align-items: end;
+  gap: 1rem;
+}
+
+.smo-formulario__signos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 1rem;
+  margin-block-end: 1rem;
+}
+
+.smo-formulario__seccion {
+  padding-block-start: 1rem;
+  border-block-start: 1px solid var(--cds-border-subtle);
+}
+
+.smo-formulario__calculado {
+  padding-block-end: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.smo-fila-medicamento {
+  display: grid;
+  grid-template-columns: minmax(14rem, 2fr) repeat(4, minmax(6rem, 1fr)) auto;
+  align-items: start;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--cds-border-subtle);
+
+  &__indicaciones {
+    grid-column: 1 / -2;
+  }
+
+  > .cds--btn {
+    margin-block-start: 1.5rem;
+  }
+
+  @media (max-width: 42rem) {
+    grid-template-columns: 1fr 1fr;
+
+    &__nombre,
+    &__indicaciones {
+      grid-column: 1 / -1;
+    }
+  }
+}
+
+.smo-sugerencia,
+.smo-alerta-alergia {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+
+  .cds--inline-notification {
+    max-inline-size: none;
+  }
+}
+
+// --------------------------------------------------- receta / certificado
+.smo-documento {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem;
+  background-color: #fff;
+  border: 1px solid var(--cds-border-subtle);
+  color: var(--smo-negro);
+
+  h3 {
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  &__encabezado {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 1rem;
+    padding-block-end: 1rem;
+    border-block-end: 3px solid var(--smo-amarillo);
+
+    .smo-logo {
+      padding-inline: 0;
+    }
+  }
+
+  &__empresa,
+  &__titulo {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.75rem;
+  }
+
+  &__titulo {
+    align-items: flex-end;
+
+    h2 {
+      font-size: 1.125rem;
+      font-weight: 600;
+    }
+  }
+
+  &__paciente {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+    gap: 0.5rem 1rem;
+    font-size: 0.875rem;
+
+    dt {
+      color: var(--cds-text-secondary);
+      font-size: 0.75rem;
+    }
+  }
+
+  &__tabla {
+    inline-size: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+
+    th,
+    td {
+      padding: 0.5rem;
+      border-block-end: 1px solid var(--cds-border-subtle);
+      text-align: start;
+      vertical-align: top;
+    }
+  }
+
+  &__texto {
+    line-height: 1.8;
+  }
+
+  &__firma {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.125rem;
+    margin-block-start: 3rem;
+    font-size: 0.875rem;
+  }
+
+  &__linea {
+    inline-size: 16rem;
+    margin-block-end: 0.5rem;
+    border-block-start: 1px solid var(--smo-negro);
+  }
+
+  &__sello {
+    color: var(--cds-text-secondary);
+    font-size: 0.75rem;
+  }
+}
+
+// Imprimir: solo el formato de la receta o del certificado
+@media print {
+  @page {
+    size: A4;
+    margin: 1.5cm;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  .smo-impresion,
+  .smo-impresion * {
+    visibility: visible;
+  }
+
+  .smo-impresion {
+    position: absolute;
+    inset: 0 auto auto 0;
+    inline-size: 100%;
+  }
+
+  .smo-modal--documento {
+    &.cds--modal,
+    .cds--modal-container,
+    .cds--modal-content {
+      position: static;
+      overflow: visible;
+      max-block-size: none;
+      background: none;
+      transform: none;
+    }
+  }
+
+  .smo-documento {
+    border: 0;
+    padding: 0;
+  }
+}

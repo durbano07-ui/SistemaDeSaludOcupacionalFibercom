@@ -5,9 +5,7 @@ import {
   Document,
   Enterprise,
   Meter,
-  Report,
   User,
-  UserMultiple,
 } from '@carbon/icons-react';
 import type { CodigoPermiso } from '@smo/shared';
 
@@ -33,10 +31,4 @@ export const OPCIONES_ADMINISTRADOR = [
   { ruta: 'rendimiento', titulo: 'Rendimiento', icono: Meter, permiso: 'supervision' },
   { ruta: 'base-datos', titulo: 'Base de datos', icono: DataBase, permiso: 'base_datos' },
   { ruta: 'logs', titulo: 'Logs', icono: Document, permiso: 'supervision' },
-] as const satisfies readonly OpcionNavegacion[];
-
-/** Opciones de la navegación superior del médico. */
-export const OPCIONES_MEDICO = [
-  { ruta: 'pacientes', titulo: 'Pacientes', icono: UserMultiple, permiso: 'datos_clinicos' },
-  { ruta: 'reportes', titulo: 'Reportes', icono: Report, permiso: 'reportes' },
 ] as const satisfies readonly OpcionNavegacion[];
