@@ -5,5 +5,7 @@ export * from './auth/auth.schema.js';
 export * from './catalogos/catalogo.schema.js';
 export * from './fechas/fechas.js';
 export * from './pacientes/paciente.schema.js';
+export * from './reportes/calculos.js';
+export * from './reportes/reportes.schema.js';
 export * from './salud/salud.schema.js';
 export * from './validadores/cedula.js';
