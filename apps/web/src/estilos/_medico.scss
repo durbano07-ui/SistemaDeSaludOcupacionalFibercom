@@ -386,3 +386,27 @@
     }
   }
 }
+
+// Diagnóstico adicional: buscador y botón para quitarlo
+.smo-diagnostico-adicional {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 0.5rem;
+
+  > .cds--btn {
+    margin-block-start: 1.5rem;
+  }
+}
+
+.smo-diagnostico-secundario {
+  display: block;
+  margin-block-start: 0.25rem;
+  color: var(--cds-text-secondary);
+  font-size: 0.875rem;
+}
+
+// Varios diagnósticos ocupan toda la fila de datos del documento
+.smo-documento__diagnosticos {
+  grid-column: 1 / -1;
+}

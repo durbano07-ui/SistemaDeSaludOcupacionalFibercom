@@ -55,6 +55,11 @@ export function TablaAtenciones({ atenciones, etiqueta, onVer, conFecha }: Tabla
               <TableCell>{a.motivo}</TableCell>
               <TableCell>
                 <strong>{a.diagnostico.codigo}</strong> {a.diagnostico.descripcion}
+                {a.diagnosticosAdicionales.map((d) => (
+                  <span key={d.codigo} className="smo-diagnostico-secundario">
+                    <strong>{d.codigo}</strong> {d.descripcion}
+                  </span>
+                ))}
               </TableCell>
               <TableCell>{a.tieneReceta ? enlace(a, 'receta', 'Ver receta') : '—'}</TableCell>
               <TableCell>

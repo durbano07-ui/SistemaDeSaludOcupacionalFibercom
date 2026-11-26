@@ -1,10 +1,9 @@
-import { Add } from '@carbon/icons-react';
+import { Add, TrashCan } from '@carbon/icons-react';
 import {
   Accordion,
   AccordionItem,
   Button,
   Checkbox,
-  ComboBox,
   ComposedModal,
   FormGroup,
   InlineLoading,
@@ -22,6 +21,7 @@ import {
 } from '@carbon/react';
 import {
   alertasSignosVitales,
+  algunoRequierePreguntaTrabajo,
   type AtencionRegistrada,
   calcularFechaFin,
   type Cie10,
@@ -29,11 +29,11 @@ import {
   fechaLocal,
   fechaSchema,
   horaLocalDeInstante,
+  MAX_DIAGNOSTICOS_ADICIONALES,
   type Medicamento,
   NOMBRES_TIPO_EVENTO,
   type NuevaAtencion,
   nuevaAtencionSchema,
-  requierePreguntaTrabajo,
   type ResumenPaciente,
   type SignosVitales,
   TIPOS_EVENTO,
@@ -42,9 +42,10 @@ import { useEffect, useState } from 'react';
 import { type FieldPath, useFieldArray } from 'react-hook-form';
 
 import { ErrorApi } from '../lib/api';
-import { useBuscarCie10, useRegistrarAtencion, useRetardado } from '../lib/consultas-medico';
+import { useRegistrarAtencion } from '../lib/consultas-medico';
 import { formatearDia } from '../lib/fecha';
 import { useFormulario } from '../lib/formulario';
+import { BuscadorCie10 } from './BuscadorCie10';
 import { FilaMedicamento } from './FilaMedicamento';
 
 interface ModalNuevaAtencionProps {
@@ -54,7 +55,6 @@ interface ModalNuevaAtencionProps {
 }
 
 const FORMULARIO = 'form-nueva-atencion';
-const textoCie10 = (c: Cie10 | null | undefined) => (c ? `${c.codigo} — ${c.descripcion}` : '');
 
 const CAMPOS_SIGNOS: { nombre: keyof SignosVitales; etiqueta: string }[] = [
   { nombre: 'presionSistolica', etiqueta: 'TA sistólica (mmHg)' },
@@ -79,8 +79,7 @@ export function ModalNuevaAtencion({ paciente, onCerrar, onGuardada }: ModalNuev
     null,
   );
   const [cie10, setCie10] = useState<Cie10 | null>(null);
-  const [textoCie, setTextoCie] = useState('');
-  const busquedaCie10 = useBuscarCie10(useRetardado(textoCie, 300));
+  const [adicionales, setAdicionales] = useState<(Cie10 | null)[]>([]);
   const [medicamentos, setMedicamentos] = useState<Record<string, Medicamento>>({});
   const [conCertificado, setConCertificado] = useState(false);
 
@@ -104,6 +103,7 @@ export function ModalNuevaAtencion({ paciente, onCerrar, onGuardada }: ModalNuev
       motivo: '',
       enfermedadActual: '',
       idCie10: '',
+      diagnosticosAdicionales: [],
       tipoEvento: 'enfermedad_comun',
       ocurrioEnTrabajo: undefined,
       signosVitales: Object.fromEntries(CAMPOS_SIGNOS.map((c) => [c.nombre, ''])),
@@ -133,7 +133,18 @@ export function ModalNuevaAtencion({ paciente, onCerrar, onGuardada }: ModalNuev
   const certificadoInicio = watch('certificado.fechaInicio');
 
   const opciones = { shouldValidate: isSubmitted, shouldDirty: true } as const;
-  const preguntaTrabajo = requierePreguntaTrabajo(idCie10) || tipoEvento === 'accidente_trabajo';
+  const preguntaTrabajo =
+    algunoRequierePreguntaTrabajo([idCie10, ...adicionales.map((c) => c?.codigo)]) ||
+    tipoEvento === 'accidente_trabajo';
+
+  const cambiarAdicionales = (nuevos: (Cie10 | null)[]) => {
+    setAdicionales(nuevos);
+    setValue(
+      'diagnosticosAdicionales',
+      nuevos.map((c) => c?.codigo ?? ''),
+      opciones,
+    );
+  };
 
   // La pregunta "¿Ocurrió en el trabajo?" solo aplica a S/T o accidentes de trabajo
   useEffect(() => {
@@ -342,22 +353,55 @@ export function ModalNuevaAtencion({ paciente, onCerrar, onGuardada }: ModalNuev
             />
 
             {/* Diagnóstico */}
-            <ComboBox<Cie10>
+            <BuscadorCie10
               id="atencion-cie10"
-              titleText="Diagnóstico CIE-10"
-              placeholder="Buscar por código o texto"
-              helperText="Escribe al menos 2 caracteres"
-              items={busquedaCie10.data ?? (cie10 ? [cie10] : [])}
-              itemToString={textoCie10}
-              selectedItem={cie10}
-              onInputChange={(valor) => setTextoCie(valor ?? '')}
-              onChange={({ selectedItem }) => {
-                setCie10(selectedItem ?? null);
-                setValue('idCie10', selectedItem?.codigo ?? '', opciones);
+              titulo="Diagnóstico principal (CIE-10)"
+              ayuda="Abre o continúa el caso. Escribe al menos 2 caracteres."
+              elegido={cie10}
+              onElegir={(elegido) => {
+                setCie10(elegido);
+                setValue('idCie10', elegido?.codigo ?? '', opciones);
               }}
-              invalid={Boolean(errors.idCie10)}
-              invalidText={errors.idCie10?.message}
+              error={errors.idCie10?.message}
             />
+            {adicionales.map((adicional, indice) => (
+              <div key={indice} className="smo-diagnostico-adicional">
+                <BuscadorCie10
+                  id={`atencion-cie10-adicional-${indice}`}
+                  titulo={`Diagnóstico adicional ${indice + 1} (CIE-10)`}
+                  elegido={adicional}
+                  onElegir={(elegido) =>
+                    cambiarAdicionales(adicionales.map((c, i) => (i === indice ? elegido : c)))
+                  }
+                  error={errors.diagnosticosAdicionales?.[indice]?.message}
+                />
+                <Button
+                  kind="ghost"
+                  size="md"
+                  hasIconOnly
+                  renderIcon={TrashCan}
+                  iconDescription={`Quitar diagnóstico adicional ${indice + 1}`}
+                  tooltipPosition="left"
+                  onClick={() => cambiarAdicionales(adicionales.filter((_, i) => i !== indice))}
+                />
+              </div>
+            ))}
+            <div>
+              <Button
+                kind="tertiary"
+                size="sm"
+                renderIcon={Add}
+                disabled={adicionales.length >= MAX_DIAGNOSTICOS_ADICIONALES}
+                onClick={() => cambiarAdicionales([...adicionales, null])}
+              >
+                Agregar diagnóstico
+              </Button>
+              {adicionales.length >= MAX_DIAGNOSTICOS_ADICIONALES && (
+                <p className="smo-ayuda">
+                  Máximo {MAX_DIAGNOSTICOS_ADICIONALES} diagnósticos adicionales.
+                </p>
+              )}
+            </div>
             {sugerirSubsecuente && (
               <div className="smo-sugerencia">
                 <InlineNotification

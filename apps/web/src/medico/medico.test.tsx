@@ -44,6 +44,7 @@ function atencionListada(n: number): AtencionListada {
     cargo: 'Técnico instalador',
     motivo: `Motivo ${n}`,
     diagnostico: { codigo: 'M54.5', descripcion: 'Lumbago no especificado' },
+    diagnosticosAdicionales: n === 3 ? [{ codigo: 'R51', descripcion: 'Cefalea' }] : [],
     tieneReceta: n % 2 === 0,
     tieneCertificado: n === 3,
   };
@@ -183,6 +184,8 @@ describe('Pestaña Atenciones', () => {
       'Certificado',
     ]);
     expect(within(tabla).getByRole('link', { name: 'Ver certificado' })).toBeInTheDocument();
+    // Diagnóstico adicional bajo el principal
+    expect(within(tabla).getByText('Cefalea')).toBeInTheDocument();
   });
 
   it('sin el permiso "atenciones" no aparece "Nueva atención"', async () => {
@@ -223,7 +226,7 @@ describe('Modal Nueva atención', () => {
       ),
     ).toBeInTheDocument();
 
-    await elegirEnCombo(usuario, 'Diagnóstico CIE-10', 'M54', /M54\.5/);
+    await elegirEnCombo(usuario, 'Diagnóstico principal (CIE-10)', 'M54', /M54\.5/);
     await usuario.click(within(modal).getByRole('button', { name: 'Cambiar a Subsecuente' }));
 
     expect(within(modal).getByRole('radio', { name: 'Subsecuente' })).toBeChecked();
@@ -235,7 +238,7 @@ describe('Modal Nueva atención', () => {
     const { usuario, modal } = await abrirNuevaAtencion();
     expect(within(modal).queryByText('¿Ocurrió en el trabajo?')).not.toBeInTheDocument();
 
-    await elegirEnCombo(usuario, 'Diagnóstico CIE-10', 'S61', /S61\.0/);
+    await elegirEnCombo(usuario, 'Diagnóstico principal (CIE-10)', 'S61', /S61\.0/);
 
     const pregunta = await within(modal).findByRole('group', { name: '¿Ocurrió en el trabajo?' });
     expect(within(pregunta).getByRole('radio', { name: 'Sí' })).toBeInTheDocument();
@@ -243,6 +246,38 @@ describe('Modal Nueva atención', () => {
     await usuario.type(within(modal).getByLabelText('Enfermedad actual'), 'Herida con herramienta');
     await usuario.click(screen.getByRole('button', { name: 'Guardar atención' }));
     expect(await within(modal).findByText('Indica si ocurrió en el trabajo')).toBeInTheDocument();
+  });
+
+  it('permite agregar diagnósticos adicionales; uno S o T hace aparecer la pregunta', async () => {
+    abrirPaciente(resumen());
+    const { usuario, modal } = await abrirNuevaAtencion();
+
+    await elegirEnCombo(usuario, 'Diagnóstico principal (CIE-10)', 'M54', /M54\.5/);
+    expect(within(modal).queryByText('¿Ocurrió en el trabajo?')).not.toBeInTheDocument();
+
+    await usuario.click(within(modal).getByRole('button', { name: 'Agregar diagnóstico' }));
+    await elegirEnCombo(usuario, 'Diagnóstico adicional 1 (CIE-10)', 'S61', /S61\.0/);
+
+    expect(
+      await within(modal).findByRole('group', { name: '¿Ocurrió en el trabajo?' }),
+    ).toBeInTheDocument();
+
+    // Al quitarlo, la pregunta deja de aplicar
+    await usuario.click(
+      within(modal).getByRole('button', { name: 'Quitar diagnóstico adicional 1' }),
+    );
+    expect(within(modal).queryByText('¿Ocurrió en el trabajo?')).not.toBeInTheDocument();
+  });
+
+  it('no deja agregar más de 5 diagnósticos adicionales', async () => {
+    abrirPaciente(resumen());
+    const { usuario, modal } = await abrirNuevaAtencion();
+    const agregar = within(modal).getByRole('button', { name: 'Agregar diagnóstico' });
+
+    for (let i = 0; i < 5; i++) await usuario.click(agregar);
+
+    expect(agregar).toBeDisabled();
+    expect(within(modal).getByText('Máximo 5 diagnósticos adicionales.')).toBeInTheDocument();
   });
 
   it('alerta en rojo si un medicamento coincide con las alergias, con "Recetar de todos modos"', async () => {

@@ -75,11 +75,13 @@ function DatosPaciente({ detalle }: { detalle: AtencionDetalle }) {
         <dt>Cargo</dt>
         <dd>{p.cargo}</dd>
       </div>
-      <div>
-        <dt>Diagnóstico</dt>
-        <dd>
-          {detalle.diagnostico.codigo} — {detalle.diagnostico.descripcion}
-        </dd>
+      <div className="smo-documento__diagnosticos">
+        <dt>{detalle.diagnosticosAdicionales.length ? 'Diagnósticos' : 'Diagnóstico'}</dt>
+        {[detalle.diagnostico, ...detalle.diagnosticosAdicionales].map((d) => (
+          <dd key={d.codigo}>
+            {d.codigo} — {d.descripcion}
+          </dd>
+        ))}
       </div>
     </dl>
   );
@@ -173,9 +175,12 @@ function Certificado({ detalle }: { detalle: AtencionDetalle }) {
           {p.apellidos} {p.nombres}
         </strong>
         , con cédula {p.cedula}, {p.cargo} de la base {p.base}, fue atendido(a) en este consultorio
-        el {formatearFecha(detalle.fecha)} con el diagnóstico{' '}
+        el {formatearFecha(detalle.fecha)} con{' '}
+        {detalle.diagnosticosAdicionales.length ? 'los diagnósticos' : 'el diagnóstico'}{' '}
         <strong>
-          {detalle.diagnostico.codigo} — {detalle.diagnostico.descripcion}
+          {[detalle.diagnostico, ...detalle.diagnosticosAdicionales]
+            .map((d) => `${d.codigo} — ${d.descripcion}`)
+            .join('; ')}
         </strong>
         , y requiere reposo de <strong>{c.dias === 1 ? '1 día' : `${c.dias} días`}</strong>, desde
         el <strong>{formatearDia(c.fechaInicio)}</strong> hasta el{' '}
