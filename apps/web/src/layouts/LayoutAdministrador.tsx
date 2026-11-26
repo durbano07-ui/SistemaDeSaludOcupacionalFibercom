@@ -1,4 +1,4 @@
-import { Settings, UserAvatar } from '@carbon/icons-react';
+import { Settings } from '@carbon/icons-react';
 import {
   Header,
   HeaderGlobalAction,
@@ -9,10 +9,17 @@ import {
 } from '@carbon/react';
 import { NavLink, Outlet } from 'react-router';
 
+import { useAuth } from '../auth/useAuth';
 import { Logo } from '../componentes/Logo';
+import { PanelPerfil } from '../componentes/PanelPerfil';
 import { OPCIONES_ADMINISTRADOR } from './navegacion';
 
 export function LayoutAdministrador() {
+  const { usuario } = useAuth();
+  const opciones = OPCIONES_ADMINISTRADOR.filter(({ permiso }) =>
+    usuario?.permisos.includes(permiso),
+  );
+
   return (
     <>
       <Header aria-label="Administración" className="smo-encabezado">
@@ -21,9 +28,7 @@ export function LayoutAdministrador() {
           <HeaderGlobalAction aria-label="Configuración" tooltipAlignment="end">
             <Settings size={20} />
           </HeaderGlobalAction>
-          <HeaderGlobalAction aria-label="Perfil" tooltipAlignment="end">
-            <UserAvatar size={20} />
-          </HeaderGlobalAction>
+          <PanelPerfil />
         </HeaderGlobalBar>
       </Header>
 
@@ -35,7 +40,7 @@ export function LayoutAdministrador() {
         isChildOfHeader={false}
       >
         <SideNavItems>
-          {OPCIONES_ADMINISTRADOR.map(({ ruta, titulo, icono }) => (
+          {opciones.map(({ ruta, titulo, icono }) => (
             <SideNavLink key={ruta} as={NavLink} to={`/admin/${ruta}`} renderIcon={icono}>
               {titulo}
             </SideNavLink>
