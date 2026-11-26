@@ -20,6 +20,8 @@ export const atencionListadaSchema = z.object({
   cargo: z.string(),
   motivo: z.string(),
   diagnostico: cie10Schema,
+  /** Diagnósticos adicionales, en orden. */
+  diagnosticosAdicionales: z.array(cie10Schema),
   tieneReceta: z.boolean(),
   tieneCertificado: z.boolean(),
 });
@@ -94,6 +96,8 @@ export const atencionDetalleSchema = z.object({
   observaciones: z.string().nullable(),
   proximaCita: fechaSchema.nullable(),
   diagnostico: cie10Schema,
+  /** Diagnósticos adicionales, en orden. */
+  diagnosticosAdicionales: z.array(cie10Schema),
   paciente: z.object({
     id: z.number().int(),
     apellidos: z.string(),

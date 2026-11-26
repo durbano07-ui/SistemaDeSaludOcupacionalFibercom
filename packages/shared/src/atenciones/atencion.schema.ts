@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { fechaLocal, fechaSchema, instanteDeHoraLocal } from '../fechas/fechas.js';
-import { requierePreguntaTrabajo } from './reglas.js';
+import { algunoRequierePreguntaTrabajo } from './reglas.js';
 
 export const TIPOS_ATENCION = ['primera', 'subsecuente'] as const;
 export const tipoAtencionSchema = z.enum(TIPOS_ATENCION, { error: 'Elige el tipo de atención' });
@@ -22,6 +22,9 @@ export const NOMBRES_TIPO_EVENTO: Record<TipoEvento, string> = {
   accidente_trabajo: 'Accidente de trabajo',
   incidente_trabajo: 'Incidente de trabajo',
 };
+
+/** Diagnósticos adicionales por atención, además del principal (tabla atencion_diagnostico). */
+export const MAX_DIAGNOSTICOS_ADICIONALES = 5;
 
 /** Margen para la "fecha no futura" (relojes del navegador y del servidor no siempre coinciden). */
 export const TOLERANCIA_FECHA_FUTURA_MS = 2 * 60_000;
@@ -159,6 +162,16 @@ export const nuevaAtencionSchema = z
       .trim()
       .min(1, 'Elige el diagnóstico CIE-10')
       .max(10),
+    /** Códigos CIE-10 adicionales, en el orden en que se registraron. */
+    diagnosticosAdicionales: z
+      .array(
+        z.string({ error: 'Elige el diagnóstico' }).trim().min(1, 'Elige el diagnóstico').max(10),
+      )
+      .max(
+        MAX_DIAGNOSTICOS_ADICIONALES,
+        `Máximo ${MAX_DIAGNOSTICOS_ADICIONALES} diagnósticos adicionales`,
+      )
+      .default([]),
     tipoEvento: tipoEventoSchema,
     ocurrioEnTrabajo: z.boolean().nullable().optional(),
     signosVitales: signosVitalesSchema.optional(),
@@ -186,8 +199,23 @@ export const nuevaAtencionSchema = z
         message: 'La próxima cita debe ser posterior a la fecha de la atención',
       });
     }
-    // RN-05
-    if (requierePreguntaTrabajo(datos.idCie10) && typeof datos.ocurrioEnTrabajo !== 'boolean') {
+    // Diagnósticos adicionales sin repetir (ni repetir el principal)
+    const vistosCie10 = new Set([datos.idCie10.toUpperCase()]);
+    datos.diagnosticosAdicionales.forEach((codigo, indice) => {
+      if (codigo && vistosCie10.has(codigo.toUpperCase())) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['diagnosticosAdicionales', indice],
+          message: 'Este diagnóstico ya está en la atención',
+        });
+      }
+      vistosCie10.add(codigo.toUpperCase());
+    });
+    // RN-05: si algún diagnóstico (principal o adicional) es S o T
+    if (
+      algunoRequierePreguntaTrabajo([datos.idCie10, ...datos.diagnosticosAdicionales]) &&
+      typeof datos.ocurrioEnTrabajo !== 'boolean'
+    ) {
       ctx.addIssue({
         code: 'custom',
         path: ['ocurrioEnTrabajo'],

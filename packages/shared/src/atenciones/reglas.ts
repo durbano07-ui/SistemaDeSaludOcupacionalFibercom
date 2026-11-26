@@ -12,6 +12,13 @@ export function requierePreguntaTrabajo(idCie10: string | undefined | null): boo
   return /^[ST]/i.test(idCie10?.trim() ?? '');
 }
 
+/** RN-05 con varios diagnósticos: basta con que uno (principal o adicional) sea S o T. */
+export function algunoRequierePreguntaTrabajo(
+  codigos: readonly (string | undefined | null)[],
+): boolean {
+  return codigos.some(requierePreguntaTrabajo);
+}
+
 // ------------------------------------------------------------------ RN-09
 export interface SignosVitales {
   presionSistolica?: number | null;

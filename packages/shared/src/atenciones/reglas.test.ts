@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   alertasSignosVitales,
+  algunoRequierePreguntaTrabajo,
   calcularFechaFin,
   coincidenciasAlergia,
   normalizarTexto,
@@ -124,5 +125,13 @@ describe('alertasSignosVitales (RN-09)', () => {
     expect(mensajes({ frecuenciaRespiratoria: 21 })).toEqual([
       'Frecuencia respiratoria alta (21 rpm)',
     ]);
+  });
+});
+
+describe('algunoRequierePreguntaTrabajo (RN-05 con varios diagnósticos)', () => {
+  it('basta con que un diagnóstico sea S o T', () => {
+    expect(algunoRequierePreguntaTrabajo(['M54.5', 'S93.4'])).toBe(true);
+    expect(algunoRequierePreguntaTrabajo(['M54.5', 'J06.9'])).toBe(false);
+    expect(algunoRequierePreguntaTrabajo([])).toBe(false);
   });
 });

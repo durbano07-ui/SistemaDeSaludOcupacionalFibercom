@@ -105,3 +105,36 @@ describe('nuevaAtencionSchema', () => {
     ).toBe('El reposo es de 1 a 365 días');
   });
 });
+
+describe('nuevaAtencionSchema: diagnósticos adicionales', () => {
+  it('acepta hasta 5 adicionales y por defecto no hay ninguno', () => {
+    expect(nuevaAtencionSchema.parse(base).diagnosticosAdicionales).toEqual([]);
+    const cinco = ['J06.9', 'R51', 'R50.9', 'K30', 'I10'];
+    expect(
+      nuevaAtencionSchema.parse({ ...base, diagnosticosAdicionales: cinco })
+        .diagnosticosAdicionales,
+    ).toEqual(cinco);
+    expect(errores({ diagnosticosAdicionales: [...cinco, 'L30.9'] }).diagnosticosAdicionales).toBe(
+      'Máximo 5 diagnósticos adicionales',
+    );
+  });
+
+  it('no permite repetir el principal ni un adicional, ni dejar una fila vacía', () => {
+    expect(errores({ diagnosticosAdicionales: ['m54.5'] })['diagnosticosAdicionales.0']).toBe(
+      'Este diagnóstico ya está en la atención',
+    );
+    expect(errores({ diagnosticosAdicionales: ['R51', 'R51'] })['diagnosticosAdicionales.1']).toBe(
+      'Este diagnóstico ya está en la atención',
+    );
+    expect(errores({ diagnosticosAdicionales: [''] })['diagnosticosAdicionales.0']).toBe(
+      'Elige el diagnóstico',
+    );
+  });
+
+  it('RN-05: un adicional S o T también exige "¿Ocurrió en el trabajo?"', () => {
+    expect(errores({ diagnosticosAdicionales: ['T14.1'] }).ocurrioEnTrabajo).toBe(
+      'Indica si ocurrió en el trabajo',
+    );
+    expect(errores({ diagnosticosAdicionales: ['T14.1'], ocurrioEnTrabajo: true })).toEqual({});
+  });
+});
