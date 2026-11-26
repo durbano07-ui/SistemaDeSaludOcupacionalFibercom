@@ -60,7 +60,7 @@ export class AuthController {
       'Devuelve el access token (15 min) y deja el refresh token en una cookie HttpOnly. ' +
       '401 con `intentosRestantes`; 423 con `bloqueadoHasta`; 429 tras 10 intentos por minuto.',
   })
-  @ApiBody({ schema: esquemaOpenApi(loginSchema) })
+  @ApiBody({ schema: esquemaOpenApi(loginSchema, 'input') })
   @ApiOkResponse({ schema: esquemaOpenApi(respuestaLoginSchema) })
   async login(
     @Body(new ZodValidationPipe(loginSchema)) datos: DatosLogin,
