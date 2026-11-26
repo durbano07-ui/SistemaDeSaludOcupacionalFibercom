@@ -9,7 +9,7 @@ const duracionSchema = z
 
 /**
  * Variables de entorno que la API necesita para arrancar. Son obligatorias, salvo los
- * parámetros de sesión (JWT_EXPIRES_IN…BLOQUEO_MINUTOS), que tienen un valor por defecto.
+ * parámetros de sesión (JWT_EXPIRES_IN…BLOQUEO_MINUTOS) y los de PDF, que tienen valor por defecto.
  */
 export const entornoSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']),
@@ -29,6 +29,13 @@ export const entornoSchema = z.object({
     .base64('debe estar en base64')
     .refine((clave) => Buffer.from(clave, 'base64').length === 32, 'debe codificar 32 bytes'),
   LOG_LEVEL: z.enum(NIVELES_LOG),
+  /** Chrome/Chromium para los PDF; si no se indica, se busca en las rutas habituales. */
+  PUPPETEER_EXECUTABLE_PATH: z.string().min(1).optional(),
+  /** true en contenedores o CI donde el sandbox de Chrome no puede iniciarse. */
+  PDF_SIN_SANDBOX: z
+    .enum(['true', 'false'], { error: 'debe ser true o false' })
+    .default('false')
+    .transform((v) => v === 'true'),
 });
 
 export type Entorno = z.infer<typeof entornoSchema>;
