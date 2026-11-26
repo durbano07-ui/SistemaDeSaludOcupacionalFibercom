@@ -13,6 +13,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "@carbon/charts": "^1.27.27",
+    "@carbon/charts-react": "^1.27.27",
     "@carbon/icons-react": "^11.92.0",
     "@carbon/react": "^1.121.0",
     "@carbon/styles": "^1.120.0",
