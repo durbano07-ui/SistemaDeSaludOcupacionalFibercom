@@ -1,5 +1,6 @@
 /**
- * Datos de desarrollo: un administrador ("admin") y un médico ("medico") con datos FICTICIOS.
+ * Datos de desarrollo: un administrador ("admin") y un médico ("medico") con datos FICTICIOS, y
+ * los datos clínicos de ejemplo (seed-clinico.ts).
  * Las contraseñas se toman de SEED_ADMIN_PASSWORD y SEED_MEDICO_PASSWORD (.env).
  * Uso: pnpm db:seed. Si los usuarios ya existen, no los modifica. No corre en producción.
  */
@@ -12,6 +13,7 @@ import { config as cargarEnv } from 'dotenv';
 import { PrismaClient } from '../src/generated/prisma/client.js';
 import { ContrasenasService } from '../src/modules/auth/contrasenas.service.js';
 import { configuracionPool } from '../src/prisma/prisma.service.js';
+import { sembrarDatosClinicos } from './seed-clinico.js';
 
 cargarEnv({ path: fileURLToPath(new URL('../../../.env', import.meta.url)), quiet: true });
 
@@ -120,6 +122,9 @@ async function sembrar(): Promise<void> {
       });
       console.warn(`✓ Usuario "${datos.nombreUsuario}" creado (${rol.nombre}).`);
     }
+
+    const medico = await prisma.usuario.findUniqueOrThrow({ where: { nombreUsuario: 'medico' } });
+    await sembrarDatosClinicos(prisma, medico.idUsuario);
   } finally {
     await prisma.$disconnect();
   }
