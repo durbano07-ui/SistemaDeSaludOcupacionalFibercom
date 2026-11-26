@@ -18,6 +18,17 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 });
 
+// jsdom tampoco implementa ResizeObserver (lo usan las pestañas y los ComboBox de Carbon).
+class ResizeObserverSimulado {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+globalThis.ResizeObserver ??= ResizeObserverSimulado as unknown as typeof ResizeObserver;
+
+// ni scrollIntoView (lo usa la lista desplegable del ComboBox).
+Element.prototype.scrollIntoView ??= vi.fn();
+
 afterEach(() => {
   cleanup();
 });

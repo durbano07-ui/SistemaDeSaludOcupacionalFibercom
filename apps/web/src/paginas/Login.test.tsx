@@ -124,7 +124,7 @@ describe('Pantalla de login', () => {
     expect(llamadas).toHaveLength(1);
 
     responder(sesionDe(USUARIO_MEDICO));
-    expect(await screen.findByRole('heading', { name: 'Pacientes' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Pacientes' })).toBeInTheDocument();
   });
 
   it('el médico entra a su layout y el administrador al suyo', async () => {

@@ -54,8 +54,8 @@ describe('Rutas protegidas', () => {
   it('el médico que entra a /admin vuelve a su layout', async () => {
     const { router } = renderizarEn('/admin/usuarios', { usuario: USUARIO_MEDICO });
 
-    expect(await screen.findByRole('heading', { name: 'Pacientes' })).toBeInTheDocument();
-    expect(router.state.location.pathname).toBe('/medico/pacientes');
+    expect(await screen.findByRole('button', { name: 'Pacientes' })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/medico');
   });
 
   it('con sesión, /login lleva al inicio del rol', async () => {
@@ -111,25 +111,34 @@ describe('Layout de administrador', () => {
   });
 });
 
-describe('Layout de médico', () => {
-  it('muestra la navegación superior, las acciones y la tarjeta de paciente', async () => {
+describe('Pantalla del médico', () => {
+  it('muestra la tarjeta vacía, los botones Pacientes y Reportes y las acciones del encabezado', async () => {
     renderizarEn('/medico', { usuario: USUARIO_MEDICO });
 
-    const navegacion = await screen.findByRole('navigation', { name: 'Navegación del médico' });
-    expect(
-      within(navegacion)
-        .getAllByRole('link')
-        .map((e) => e.textContent),
-    ).toEqual(['Pacientes', 'Reportes']);
-    expect(await screen.findByRole('heading', { name: 'Pacientes' })).toBeInTheDocument();
-    expect(within(navegacion).getByRole('link', { name: 'Pacientes' })).toHaveAttribute(
-      'aria-current',
-      'page',
-    );
+    expect(await screen.findByRole('button', { name: 'Pacientes' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Reportes' })).toBeInTheDocument();
     expect(screen.getByText('No se ha seleccionado ningún paciente')).toBeInTheDocument();
+    // Sin paciente seleccionado no hay pestañas
+    expect(screen.queryByRole('tab', { name: 'Atenciones' })).not.toBeInTheDocument();
     for (const accion of ['Otras funciones', 'Configuración', 'Perfil', 'Salir']) {
       expect(screen.getByRole('button', { name: accion })).toBeInTheDocument();
     }
+  });
+
+  it('"Reportes" avisa que estará disponible próximamente', async () => {
+    const usuario = userEvent.setup();
+    renderizarEn('/medico', { usuario: USUARIO_MEDICO });
+
+    await usuario.click(await screen.findByRole('button', { name: 'Reportes' }));
+
+    expect(screen.getByText('Disponible próximamente.')).toBeInTheDocument();
+  });
+
+  it('los enlaces anteriores (/medico/pacientes) llevan a la pantalla del médico', async () => {
+    const { router } = renderizarEn('/medico/pacientes', { usuario: USUARIO_MEDICO });
+
+    expect(await screen.findByRole('button', { name: 'Pacientes' })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/medico');
   });
 
   it('el personal de apoyo solo ve lo que sus permisos permiten', async () => {
@@ -139,19 +148,17 @@ describe('Layout de médico', () => {
       rol: { codigo: 'apoyo' as const, nombre: 'Personal de apoyo' },
       permisos: ['reportes' as const],
     };
-    const { router } = renderizarEn('/medico', { usuario: apoyo });
+    renderizarEn('/medico', { usuario: apoyo });
 
-    const navegacion = await screen.findByRole('navigation', { name: 'Navegación del médico' });
-    expect(
-      within(navegacion)
-        .getAllByRole('link')
-        .map((e) => e.textContent),
-    ).toEqual(['Reportes']);
-    expect(await screen.findByRole('heading', { name: 'Reportes' })).toBeInTheDocument();
-    expect(router.state.location.pathname).toBe('/medico/reportes');
+    expect(await screen.findByRole('button', { name: 'Reportes' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Pacientes' })).not.toBeInTheDocument();
     expect(screen.queryByText('No se ha seleccionado ningún paciente')).not.toBeInTheDocument();
+  });
 
-    await router.navigate('/medico/pacientes');
+  it('sin permisos clínicos ni de reportes avisa que no hay opciones', async () => {
+    const sinPermisos = { ...USUARIO_MEDICO, id: 4, permisos: [] };
+    renderizarEn('/medico', { usuario: sinPermisos });
+
     expect(await screen.findByRole('heading', { name: 'Sin acceso' })).toBeInTheDocument();
   });
 
