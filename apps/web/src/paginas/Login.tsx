@@ -140,7 +140,7 @@ export function Login() {
     <div className="smo-login">
       <main className="smo-login__principal">
         <Section as="div" className="smo-login__tarjeta">
-          <Logo />
+          <Logo tamano="grande" />
           <Heading className="smo-login__titulo">Iniciar sesión</Heading>
           <p className="smo-login__subtitulo">Sistema de Medicina Ocupacional</p>
 

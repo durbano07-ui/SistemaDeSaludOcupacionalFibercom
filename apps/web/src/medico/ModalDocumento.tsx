@@ -35,7 +35,7 @@ function Encabezado({
 }) {
   return (
     <header className="smo-documento__encabezado">
-      <Logo />
+      <Logo tamano="documento" />
       <div className="smo-documento__empresa">
         <strong>{EMPRESA.nombre}</strong>
         <span>{EMPRESA.area}</span>

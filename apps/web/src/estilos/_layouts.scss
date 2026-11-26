@@ -14,10 +14,24 @@
   text-decoration: none;
   white-space: nowrap;
 
-  &__marca {
-    font-size: 1.125rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
+  &__imagen {
+    display: block;
+    block-size: 2rem;
+    inline-size: auto;
+  }
+
+  &--grande .smo-logo__imagen {
+    block-size: 3.5rem;
+  }
+
+  &--documento .smo-logo__imagen {
+    block-size: 2.75rem;
+  }
+
+  // En el login y en los documentos el nombre del sistema ya aparece al lado o debajo
+  &--grande .smo-logo__sistema,
+  &--documento .smo-logo__sistema {
+    display: none;
   }
 
   &__sistema {
