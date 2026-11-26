@@ -12,7 +12,7 @@ jobs:
       NODE_ENV: test
       PORT: 3000
       TZ: America/Guayaquil
-      DATABASE_URL: mysql://smo:smo_local@127.0.0.1:3306/smo_desarrollo
+      DATABASE_URL: mysql://smo:smo_local@127.0.0.1:3306/smo_pruebas
       CORS_ORIGIN: http://localhost:5173
       JWT_SECRET: ci-jwt-secreto-solo-para-pruebas-0123456789
       JWT_REFRESH_SECRET: ci-refresh-secreto-solo-para-pruebas-0123456789
@@ -23,7 +23,7 @@ jobs:
         image: mariadb:11.4
         env:
           MARIADB_ROOT_PASSWORD: root_ci
-          MARIADB_DATABASE: smo_desarrollo
+          MARIADB_DATABASE: smo_pruebas
           MARIADB_USER: smo
           MARIADB_PASSWORD: smo_local
         ports:
@@ -43,7 +43,7 @@ jobs:
       - name: Cargar la estructura de la base
         run: |
           for script in bd/01-estructura.sql bd/02-ampliacion-modelo.sql; do
-            docker exec -i ${{ job.services.mariadb.id }} mariadb -u root -proot_ci smo_desarrollo < "$script"
+            docker exec -i ${{ job.services.mariadb.id }} mariadb -u root -proot_ci smo_pruebas < "$script"
           done
       - name: Lint
         run: pnpm lint

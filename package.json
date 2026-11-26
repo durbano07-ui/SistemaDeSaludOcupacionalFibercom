@@ -17,6 +17,7 @@
     "db:up": "docker compose --env-file .env -f docker/docker-compose.dev.yml up -d",
     "db:down": "docker compose --env-file .env -f docker/docker-compose.dev.yml down",
     "db:seed": "pnpm --filter @smo/shared build && pnpm --filter @smo/api db:seed",
+    "db:pruebas": "docker exec smo-mariadb mkdir -p /tmp/smo-bd && docker cp bd/01-estructura.sql smo-mariadb:/tmp/smo-bd/ && docker cp bd/02-ampliacion-modelo.sql smo-mariadb:/tmp/smo-bd/ && docker cp docker/03-base-pruebas.sh smo-mariadb:/tmp/smo-bd/ && docker exec -e BD_DIR=/tmp/smo-bd smo-mariadb sh /tmp/smo-bd/03-base-pruebas.sh",
     "db:studio": "pnpm --filter @smo/api prisma:studio",
     "prepare": "husky"
   },
