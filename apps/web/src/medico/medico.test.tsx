@@ -131,7 +131,7 @@ describe('Búsqueda y tarjeta del paciente', () => {
     expect(within(tabla).queryByText('0250010015')).not.toBeInTheDocument();
     await usuario.click(within(tabla).getByRole('button', { name: /Seleccionar a Chimbo/ }));
 
-    const tarjeta = await screen.findByLabelText('Paciente seleccionado');
+    const tarjeta = await screen.findByRole('region', { name: 'Paciente seleccionado' });
     expect(within(tarjeta).getByText('Chimbo Guamán Luis Alberto')).toBeInTheDocument();
     expect(within(tarjeta).getByRole('note')).toHaveTextContent('Alergias: Penicilina');
     expect(within(tarjeta).getByText('Discapacidad física (40 %)')).toBeInTheDocument();

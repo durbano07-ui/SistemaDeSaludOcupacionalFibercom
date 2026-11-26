@@ -226,6 +226,7 @@ export function ModalNuevaAtencion({ paciente, onCerrar, onGuardada }: ModalNuev
         title="Nueva atención"
         label={`${paciente.apellidos} ${paciente.nombres}`}
         closeModal={onCerrar}
+        iconDescription="Cerrar"
       />
       <ModalBody hasForm>
         <form id={FORMULARIO} noValidate onSubmit={guardar} aria-label="Nueva atención">

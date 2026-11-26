@@ -52,7 +52,7 @@ export function TarjetaPaciente({ paciente, cargando, error }: TarjetaPacientePr
 
   const caso = paciente.casoAbierto;
   return (
-    <Tile className="smo-tarjeta" aria-label="Paciente seleccionado">
+    <Tile className="smo-tarjeta" role="region" aria-label="Paciente seleccionado">
       <h2 className="smo-tarjeta__nombre">
         {paciente.apellidos} {paciente.nombres}
       </h2>

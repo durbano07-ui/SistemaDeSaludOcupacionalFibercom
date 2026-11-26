@@ -49,7 +49,7 @@ export function ModalBuscarPaciente({
       className="smo-modal"
       aria-label="Pacientes"
     >
-      <ModalHeader title="Pacientes" closeModal={onCerrar} />
+      <ModalHeader title="Pacientes" closeModal={onCerrar} iconDescription="Cerrar" />
       <ModalBody>
         <form
           role="search"

@@ -25,6 +25,15 @@
     border-inline-start: 1px solid var(--cds-border-subtle);
     font-size: 0.875rem;
   }
+
+  // En el celular el encabezado necesita el espacio para Perfil y Salir
+  .cds--header & {
+    @media (max-width: 42rem) {
+      .smo-logo__sistema {
+        display: none;
+      }
+    }
+  }
 }
 
 // Opción activa: subrayado rojo (navegación lateral y superior)
