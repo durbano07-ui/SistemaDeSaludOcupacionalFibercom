@@ -1,7 +1,9 @@
+import { type ReactNode, Suspense } from 'react';
 import { Navigate, type RouteObject } from 'react-router';
 
 import { ProveedorAuth } from './auth/ProveedorAuth';
 import { Permitido, RedirigirAlInicio, RutaProtegida, SoloAnonimo } from './auth/RutaProtegida';
+import { CargandoPagina } from './componentes/CargandoPagina';
 import { PaginaVacia } from './componentes/PaginaVacia';
 import { PrimeraOpcionPermitida } from './componentes/PrimeraOpcionPermitida';
 import { SinPermiso } from './componentes/SinPermiso';
@@ -11,13 +13,21 @@ import { OPCIONES_ADMINISTRADOR, type OpcionNavegacion } from './layouts/navegac
 import { PantallaMedico } from './medico/PantallaMedico';
 import { Inicio } from './paginas/Inicio';
 import { Login } from './paginas/Login';
+import { PaginaEstadisticas, PantallaReportes } from './paginas-perezosas';
+
+/** Páginas del administrador ya construidas; el resto todavía es una página vacía. */
+const PAGINAS_ADMIN: Record<string, ReactNode> = {
+  estadisticas: <PaginaEstadisticas />,
+};
 
 function rutasDeOpciones(opciones: readonly OpcionNavegacion[]): RouteObject[] {
   return opciones.map(({ ruta, titulo, permiso }) => ({
     path: ruta,
     element: (
       <Permitido permiso={permiso} sinPermiso={<SinPermiso />}>
-        <PaginaVacia titulo={titulo} />
+        <Suspense fallback={<CargandoPagina />}>
+          {PAGINAS_ADMIN[ruta] ?? <PaginaVacia titulo={titulo} />}
+        </Suspense>
       </Permitido>
     ),
   }));
@@ -65,6 +75,16 @@ export const rutas: RouteObject[] = [
             ),
             children: [
               { index: true, element: <PantallaMedico /> },
+              {
+                path: 'reportes',
+                element: (
+                  <Permitido permiso="reportes" sinPermiso={<SinPermiso />}>
+                    <Suspense fallback={<CargandoPagina />}>
+                      <PantallaReportes />
+                    </Suspense>
+                  </Permitido>
+                ),
+              },
               // Enlaces anteriores (/medico/pacientes, /medico/reportes) llevan a la pantalla única
               { path: '*', element: <Navigate to="/medico" replace /> },
             ],

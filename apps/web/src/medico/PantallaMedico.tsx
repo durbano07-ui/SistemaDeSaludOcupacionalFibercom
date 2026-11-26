@@ -11,7 +11,7 @@ import {
 } from '@carbon/react';
 import type { AtencionRegistrada } from '@smo/shared';
 import { useState } from 'react';
-import { useSearchParams } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 
 import { usePermiso } from '../auth/useAuth';
 import { SinPermiso } from '../componentes/SinPermiso';
@@ -30,12 +30,12 @@ function ProximoModulo() {
 export function PantallaMedico() {
   const verDatosClinicos = usePermiso('datos_clinicos');
   const verReportes = usePermiso('reportes');
+  const navegar = useNavigate();
   const [parametros, setParametros] = useSearchParams();
   const idPaciente = Number(parametros.get('paciente')) || null;
   const resumen = useResumenPaciente(verDatosClinicos ? idPaciente : null);
   const [buscando, setBuscando] = useState(false);
   const [registrando, setRegistrando] = useState(false);
-  const [avisoReportes, setAvisoReportes] = useState(false);
   const [registrada, setRegistrada] = useState<AtencionRegistrada | null>(null);
 
   if (!verDatosClinicos && !verReportes) {
@@ -71,21 +71,16 @@ export function PantallaMedico() {
             </Button>
           )}
           {verReportes && (
-            <Button kind="tertiary" renderIcon={Report} onClick={() => setAvisoReportes(true)}>
+            <Button
+              kind="tertiary"
+              renderIcon={Report}
+              onClick={() => void navegar('/medico/reportes')}
+            >
               Reportes
             </Button>
           )}
         </Tile>
 
-        {avisoReportes && (
-          <InlineNotification
-            kind="info"
-            lowContrast
-            title="Reportes"
-            subtitle="Disponible próximamente."
-            onClose={() => setAvisoReportes(false)}
-          />
-        )}
         {registrada && (
           <InlineNotification
             kind="success"

@@ -11,6 +11,7 @@
 @use 'layouts'; // estilos propios, después de Carbon
 @use 'login';
 @use 'medico';
+@use 'reportes';
 
 // Tokens de componentes de Carbon (se publican como variables CSS) y colores propios
 :root {
