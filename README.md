@@ -25,8 +25,7 @@ pnpm db:up
 ```
 
 Crea el contenedor `smo-mariadb` (MariaDB 11.4, base `smo_desarrollo`, usuario `smo`) y, la
-primera vez, carga `bd/01-estructura.sql`, `bd/02-ampliacion-modelo.sql` y
-`bd/03-diagnosticos-adicionales.sql` (28 tablas).
+primera vez, carga los scripts `bd/01` a `bd/04` (29 tablas).
 En una base recién creada, registre en Prisma que esas migraciones ya están aplicadas
 (después de `pnpm install`):
 
@@ -34,6 +33,7 @@ En una base recién creada, registre en Prisma que esas migraciones ya están ap
 pnpm --filter @smo/api exec prisma migrate resolve --applied 0_init
 pnpm --filter @smo/api exec prisma migrate resolve --applied 1_ampliacion_modelo
 pnpm --filter @smo/api exec prisma migrate resolve --applied 2_diagnosticos_adicionales
+pnpm --filter @smo/api exec prisma migrate resolve --applied 3_metas_sst
 ```
 
 En una base que ya existía, aplique los scripts nuevos de `bd/` en orden (por ejemplo
@@ -152,20 +152,45 @@ certificado listos para imprimir.
 - Fechas: instantes en UTC en la base y hora de Ecuador en la interfaz; columnas DATE como
   'AAAA-MM-DD' sin conversión. Las reglas compartidas viven en `packages/shared/src/atenciones`.
 
+## Reportes y estadísticas
+
+Pantalla `/medico/reportes` (permiso `reportes`): Registro mensual, Consolidado anual, Informe
+trimestral SST (con metas editables), Morbilidad CIE-10 y Estadísticas de gestión, con filtros de
+año, mes o trimestre, base y cargo. Todo se calcula del registro de atenciones con consultas
+agregadas en SQL.
+
+| Endpoint (`/api/v1`)                                                                                                  | Permiso       |
+| --------------------------------------------------------------------------------------------------------------------- | ------------- |
+| `GET /reportes/{registro-mensual,consolidado-anual,informe-trimestral,morbilidad,gestion}` · `GET /reportes/opciones` | `reportes`    |
+| `GET /reportes/{tipo}/excel` · `GET /reportes/{tipo}/pdf` (los 4 primeros; quedan en auditoría)                       | `reportes`    |
+| `GET /metas-sst` · `PUT /metas-sst/:indicador`                                                                        | `reportes`    |
+| `GET /admin/estadisticas/{rendimiento,usuarios,modulos}`                                                              | `supervision` |
+
+- Fechas: los reportes agrupan por día/mes/trimestre de Ecuador con un desplazamiento FIJO de
+  −5 h (`DATE_SUB(fecha, INTERVAL 5 HOUR)`), sin `CONVERT_TZ`.
+- Morbilidad: solo atenciones primeras, por diagnóstico principal.
+- PDF: `PdfService` (Puppeteer) usa Chrome/Chromium del sistema. Si no está en una ruta habitual,
+  defina `PUPPETEER_EXECUTABLE_PATH`; en Docker o CI sin sandbox, `PDF_SIN_SANDBOX=true`.
+- Estadísticas del administrador: el **tiempo de respuesta se guarda en memoria** (últimas 24 h)
+  y se pierde si se reinicia la API. Usuarios activos y módulos se consultan en el momento.
+
 ## Estructura
 
 ```
 apps/
   api/                 NestJS 12 + Prisma 7 (adaptador MariaDB)
     prisma/            schema.prisma (de `prisma db pull`), migraciones, seed.ts y seed-clinico.ts
-    src/modules/       un módulo por dominio (salud, auth, auditoria, pacientes, atenciones, catalogos)
-    src/common/        filtro Problem Details (RFC 9457), pipe Zod, contexto de petición
+    src/modules/       un módulo por dominio (salud, auth, auditoria, pacientes, atenciones,
+                       catalogos, reportes, estadisticas)
+    src/common/        filtro Problem Details (RFC 9457), pipe Zod, contexto de petición, PDF
     src/config/        validación de variables de entorno
     test/              pruebas de integración (Supertest)
   web/                 React 19 + Vite 8 + IBM Carbon (tema FIBERCOM)
     src/layouts/       layouts de administrador y médico
     src/auth/          sesión (ProveedorAuth), rutas protegidas, usePermiso
     src/medico/        pantalla del médico: tarjeta, búsqueda, pestañas, nueva atención, documentos
+    src/reportes/      pantalla de reportes (pestañas, filtros, exportaciones, metas SST)
+    src/admin/         estadísticas del administrador
     src/paginas/       páginas (Login, Estado)
     src/lib/           cliente de la API, TanStack Query, formularios, fechas
 packages/
