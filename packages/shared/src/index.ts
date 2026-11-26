@@ -3,6 +3,7 @@ export * from './atenciones/reglas.js';
 export * from './atenciones/respuestas.schema.js';
 export * from './auth/auth.schema.js';
 export * from './catalogos/catalogo.schema.js';
+export * from './estadisticas/estadisticas.schema.js';
 export * from './fechas/fechas.js';
 export * from './pacientes/paciente.schema.js';
 export * from './reportes/calculos.js';
