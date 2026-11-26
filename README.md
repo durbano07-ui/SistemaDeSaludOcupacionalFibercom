@@ -25,14 +25,20 @@ pnpm db:up
 ```
 
 Crea el contenedor `smo-mariadb` (MariaDB 11.4, base `smo_desarrollo`, usuario `smo`) y, la
-primera vez, carga `bd/01-estructura.sql` y `bd/02-ampliacion-modelo.sql` (27 tablas).
+primera vez, carga `bd/01-estructura.sql`, `bd/02-ampliacion-modelo.sql` y
+`bd/03-diagnosticos-adicionales.sql` (28 tablas).
 En una base recién creada, registre en Prisma que esas migraciones ya están aplicadas
 (después de `pnpm install`):
 
 ```bash
 pnpm --filter @smo/api exec prisma migrate resolve --applied 0_init
 pnpm --filter @smo/api exec prisma migrate resolve --applied 1_ampliacion_modelo
+pnpm --filter @smo/api exec prisma migrate resolve --applied 2_diagnosticos_adicionales
 ```
+
+En una base que ya existía, aplique los scripts nuevos de `bd/` en orden (por ejemplo
+`docker exec -i smo-mariadb mariadb -usmo -psmo_local smo_desarrollo < bd/03-diagnosticos-adicionales.sql`)
+y márquelos como aplicados con el `migrate resolve` correspondiente.
 
 Para empezar desde cero:
 
@@ -133,6 +139,9 @@ certificado listos para imprimir.
 | `GET /atenciones/:id`                                                                                                                                | `datos_clinicos` |
 | `POST /atenciones` · `GET /cie10?q=` · `GET /medicamentos?q=`                                                                                        | `atenciones`     |
 
+- Cada atención tiene un diagnóstico principal (`atencion.id_cie10`, el que abre o continúa el
+  caso) y hasta 5 adicionales (`atencion_diagnostico`). Si alguno es S o T se pregunta si ocurrió
+  en el trabajo.
 - Toda la atención (caso, atención, evolución, receta, detalle, certificado) se guarda en una
   transacción (`registro-atencion.ts`). Primera: cierra el caso abierto y abre otro; subsecuente:
   se suma al caso abierto (409 si no hay).
