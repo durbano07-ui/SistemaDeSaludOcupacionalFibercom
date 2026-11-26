@@ -11,27 +11,28 @@ datasource db {
 
 /// Cada atención del consultorio. Fecha no futura: se valida en la API
 model Atencion {
-  idAtencion        Int                  @id @default(autoincrement()) @map("id_atencion") @db.UnsignedInt
-  codigo            String               @unique(map: "uk_atencion_codigo") @db.VarChar(20)
-  idUsuario         Int                  @map("id_usuario") @db.UnsignedInt
-  idUsuarioRegistra Int                  @map("id_usuario_registra") @db.UnsignedInt
-  idCaso            Int                  @map("id_caso") @db.UnsignedInt
-  idCie10           String               @map("id_cie10") @db.VarChar(10)
-  fecha             DateTime             @db.DateTime(0)
-  tipoAtencion      AtencionTipoAtencion @map("tipo_atencion")
-  tipoEvento        AtencionTipoEvento   @map("tipo_evento")
-  ocurrioEnTrabajo  Boolean?             @map("ocurrio_en_trabajo")
-  observaciones     String?              @db.Text
-  proximaCita       DateTime?            @map("proxima_cita") @db.Date
-  creadoEn          DateTime             @default(now()) @map("creado_en") @db.DateTime(0)
-  actualizadoEn     DateTime             @default(now()) @updatedAt @map("actualizado_en") @db.DateTime(0)
-  caso              Caso                 @relation(fields: [idCaso], references: [idCaso], map: "fk_atencion_caso")
-  cie10             Cie10                @relation(fields: [idCie10], references: [idCie10], map: "fk_atencion_cie10")
-  usuarioRegistra   Usuario              @relation("AtencionUsuarioRegistra", fields: [idUsuarioRegistra], references: [idUsuario], map: "fk_atencion_registra")
-  usuario           Usuario              @relation("AtencionUsuario", fields: [idUsuario], references: [idUsuario], map: "fk_atencion_usuario")
-  certificado       CertificadoReposo?
-  evolucionMedica   EvolucionMedica?
-  recetaMedica      RecetaMedica?
+  idAtencion              Int                   @id @default(autoincrement()) @map("id_atencion") @db.UnsignedInt
+  codigo                  String                @unique(map: "uk_atencion_codigo") @db.VarChar(20)
+  idUsuario               Int                   @map("id_usuario") @db.UnsignedInt
+  idUsuarioRegistra       Int                   @map("id_usuario_registra") @db.UnsignedInt
+  idCaso                  Int                   @map("id_caso") @db.UnsignedInt
+  idCie10                 String                @map("id_cie10") @db.VarChar(10)
+  fecha                   DateTime              @db.DateTime(0)
+  tipoAtencion            AtencionTipoAtencion  @map("tipo_atencion")
+  tipoEvento              AtencionTipoEvento    @map("tipo_evento")
+  ocurrioEnTrabajo        Boolean?              @map("ocurrio_en_trabajo")
+  observaciones           String?               @db.Text
+  proximaCita             DateTime?             @map("proxima_cita") @db.Date
+  creadoEn                DateTime              @default(now()) @map("creado_en") @db.DateTime(0)
+  actualizadoEn           DateTime              @default(now()) @updatedAt @map("actualizado_en") @db.DateTime(0)
+  caso                    Caso                  @relation(fields: [idCaso], references: [idCaso], map: "fk_atencion_caso")
+  cie10                   Cie10                 @relation(fields: [idCie10], references: [idCie10], map: "fk_atencion_cie10")
+  usuarioRegistra         Usuario               @relation("AtencionUsuarioRegistra", fields: [idUsuarioRegistra], references: [idUsuario], map: "fk_atencion_registra")
+  usuario                 Usuario               @relation("AtencionUsuario", fields: [idUsuario], references: [idUsuario], map: "fk_atencion_usuario")
+  certificado             CertificadoReposo?
+  evolucionMedica         EvolucionMedica?
+  recetaMedica            RecetaMedica?
+  diagnosticosAdicionales AtencionDiagnostico[]
 
   @@index([idCaso], map: "ix_atencion_caso")
   @@index([idCie10], map: "ix_atencion_cie10")
@@ -98,6 +99,7 @@ model Cie10 {
   atenciones                Atencion[]
   casos                     Caso[]
   enfermedadesCatastroficas EnfermedadCatastrofica[]
+  diagnosticosAdicionales   AtencionDiagnostico[]
 
   @@fulltext([descripcion], map: "ft_cie10_descripcion")
   @@map("cie10")
@@ -470,6 +472,21 @@ model Auditoria {
   @@index([entidad, idEntidad], map: "ix_aud_entidad")
   @@index([fecha], map: "ix_aud_fecha")
   @@map("auditoria")
+}
+
+/// Diagnósticos adicionales de una atención (el principal está en atencion.id_cie10)
+model AtencionDiagnostico {
+  idAtencion Int      @map("id_atencion") @db.UnsignedInt
+  idCie10    String   @map("id_cie10") @db.VarChar(10)
+  orden      Int      @db.UnsignedTinyInt
+  creadoEn   DateTime @default(now()) @map("creado_en") @db.DateTime(0)
+  atencion   Atencion @relation(fields: [idAtencion], references: [idAtencion], map: "fk_ad_atencion")
+  cie10      Cie10    @relation(fields: [idCie10], references: [idCie10], map: "fk_ad_cie10")
+
+  @@id([idAtencion, idCie10])
+  @@unique([idAtencion, orden], map: "uk_ad_orden")
+  @@index([idCie10], map: "ix_ad_cie10")
+  @@map("atencion_diagnostico")
 }
 
 /// Certificado de reposo emitido en una atención (CER-2026-0001)

@@ -42,7 +42,7 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Cargar la estructura de la base
         run: |
-          for script in bd/01-estructura.sql bd/02-ampliacion-modelo.sql; do
+          for script in bd/[0-9][0-9]-*.sql; do
             docker exec -i ${{ job.services.mariadb.id }} mariadb -u root -proot_ci smo_pruebas < "$script"
           done
       - name: Lint
