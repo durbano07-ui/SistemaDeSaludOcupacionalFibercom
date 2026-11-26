@@ -18,6 +18,8 @@ jobs:
       JWT_REFRESH_SECRET: ci-refresh-secreto-solo-para-pruebas-0123456789
       TOTP_ENCRYPTION_KEY: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
       LOG_LEVEL: silent
+      # Chrome (PDF) no puede usar su sandbox en los runners de GitHub
+      PDF_SIN_SANDBOX: 'true'
     services:
       mariadb:
         image: mariadb:11.4
