@@ -1,46 +1,39 @@
 import { screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { renderizarEn } from './test/renderizar';
-
-function simularApi(respuesta: Response | Promise<never>) {
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(() => (respuesta instanceof Response ? Promise.resolve(respuesta) : respuesta)),
-  );
-}
+import { renderizarEn, USUARIO_ADMIN, USUARIO_MEDICO } from './test/renderizar';
 
 afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe('Página de inicio', () => {
-  it('muestra que la API y la base de datos responden', async () => {
-    simularApi(Response.json({ estado: 'ok', baseDatos: 'ok', hora: '2026-11-23T20:00:00.000Z' }));
+const salud = (baseDatos: 'ok' | 'error') => () =>
+  Response.json({ estado: 'ok', baseDatos, hora: '2026-11-23T20:00:00.000Z' });
 
-    renderizarEn('/');
+describe('Página de estado', () => {
+  it('muestra que la API y la base de datos responden', async () => {
+    const { fetchSimulado } = renderizarEn('/estado', {
+      respuestas: { '/api/v1/salud': salud('ok') },
+    });
 
     expect(await screen.findByText('La API responde')).toBeInTheDocument();
     expect(screen.getByText('La base de datos responde')).toBeInTheDocument();
     expect(screen.getByText(/23\/11\/2026 15:00:00/)).toBeInTheDocument();
-    expect(fetch).toHaveBeenCalledWith('/api/v1/salud', expect.anything());
+    expect(fetchSimulado).toHaveBeenCalledWith('/api/v1/salud', expect.anything());
   });
 
   it('avisa con ícono y texto cuando la base de datos no responde', async () => {
-    simularApi(
-      Response.json({ estado: 'ok', baseDatos: 'error', hora: '2026-11-23T20:00:00.000Z' }),
-    );
-
-    renderizarEn('/');
+    renderizarEn('/estado', { respuestas: { '/api/v1/salud': salud('error') } });
 
     expect(await screen.findByRole('alert')).toHaveTextContent('La base de datos no responde');
     expect(screen.getByText('La API responde')).toBeInTheDocument();
   });
 
   it('avisa cuando la API no responde', async () => {
-    simularApi(Promise.reject(new TypeError('Failed to fetch')));
-
-    renderizarEn('/');
+    renderizarEn('/estado', {
+      respuestas: { '/api/v1/salud': () => Promise.reject(new TypeError('Failed to fetch')) },
+    });
 
     const alertas = await screen.findAllByRole('alert');
     expect(alertas.map((a) => a.textContent)).toEqual([
@@ -50,11 +43,36 @@ describe('Página de inicio', () => {
   });
 });
 
+describe('Rutas protegidas', () => {
+  it('sin sesión lleva a /login', async () => {
+    const { router } = renderizarEn('/medico/pacientes');
+
+    expect(await screen.findByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/login');
+  });
+
+  it('el médico que entra a /admin vuelve a su layout', async () => {
+    const { router } = renderizarEn('/admin/usuarios', { usuario: USUARIO_MEDICO });
+
+    expect(await screen.findByRole('heading', { name: 'Pacientes' })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/medico/pacientes');
+  });
+
+  it('con sesión, /login lleva al inicio del rol', async () => {
+    const { router } = renderizarEn('/login', { usuario: USUARIO_ADMIN });
+
+    expect(await screen.findByRole('heading', { name: 'Estadísticas' })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/admin/estadisticas');
+  });
+});
+
 describe('Layout de administrador', () => {
   it('tiene 7 opciones laterales y marca la activa', async () => {
-    renderizarEn('/admin/usuarios');
+    renderizarEn('/admin/usuarios', { usuario: USUARIO_ADMIN });
 
-    const navegacion = screen.getByRole('navigation', { name: 'Navegación del administrador' });
+    const navegacion = await screen.findByRole('navigation', {
+      name: 'Navegación del administrador',
+    });
     const enlaces = within(navegacion).getAllByRole('link');
     expect(enlaces.map((e) => e.textContent)).toEqual([
       'Estadísticas',
@@ -73,13 +91,31 @@ describe('Layout de administrador', () => {
     expect(screen.getByRole('button', { name: 'Configuración' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Perfil' })).toBeInTheDocument();
   });
+
+  it('el perfil muestra el nombre y el rol reales y "Cerrar sesión" vuelve a /login', async () => {
+    const usuario = userEvent.setup();
+    const { router, fetchSimulado } = renderizarEn('/admin', { usuario: USUARIO_ADMIN });
+
+    await usuario.click(await screen.findByRole('button', { name: 'Perfil' }));
+    expect(screen.getByText('Andrea Sofía Prueba Administradora')).toBeInTheDocument();
+    expect(screen.getByText('Administrador')).toBeInTheDocument();
+
+    await usuario.click(screen.getByRole('button', { name: 'Cerrar sesión' }));
+
+    expect(await screen.findByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/login');
+    expect(fetchSimulado).toHaveBeenCalledWith(
+      '/api/v1/auth/logout',
+      expect.objectContaining({ method: 'POST' }),
+    );
+  });
 });
 
 describe('Layout de médico', () => {
   it('muestra la navegación superior, las acciones y la tarjeta de paciente', async () => {
-    renderizarEn('/medico');
+    renderizarEn('/medico', { usuario: USUARIO_MEDICO });
 
-    const navegacion = screen.getByRole('navigation', { name: 'Navegación del médico' });
+    const navegacion = await screen.findByRole('navigation', { name: 'Navegación del médico' });
     expect(
       within(navegacion)
         .getAllByRole('link')
@@ -94,5 +130,42 @@ describe('Layout de médico', () => {
     for (const accion of ['Otras funciones', 'Configuración', 'Perfil', 'Salir']) {
       expect(screen.getByRole('button', { name: accion })).toBeInTheDocument();
     }
+  });
+
+  it('el personal de apoyo solo ve lo que sus permisos permiten', async () => {
+    const apoyo = {
+      ...USUARIO_MEDICO,
+      id: 3,
+      rol: { codigo: 'apoyo' as const, nombre: 'Personal de apoyo' },
+      permisos: ['reportes' as const],
+    };
+    const { router } = renderizarEn('/medico', { usuario: apoyo });
+
+    const navegacion = await screen.findByRole('navigation', { name: 'Navegación del médico' });
+    expect(
+      within(navegacion)
+        .getAllByRole('link')
+        .map((e) => e.textContent),
+    ).toEqual(['Reportes']);
+    expect(await screen.findByRole('heading', { name: 'Reportes' })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/medico/reportes');
+    expect(screen.queryByText('No se ha seleccionado ningún paciente')).not.toBeInTheDocument();
+
+    await router.navigate('/medico/pacientes');
+    expect(await screen.findByRole('heading', { name: 'Sin acceso' })).toBeInTheDocument();
+  });
+
+  it('"Salir" cierra la sesión y vuelve a /login', async () => {
+    const usuario = userEvent.setup();
+    const { router, fetchSimulado } = renderizarEn('/medico', { usuario: USUARIO_MEDICO });
+
+    await usuario.click(await screen.findByRole('button', { name: 'Salir' }));
+
+    expect(await screen.findByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/login');
+    expect(fetchSimulado).toHaveBeenCalledWith(
+      '/api/v1/auth/logout',
+      expect.objectContaining({ method: 'POST' }),
+    );
   });
 });
