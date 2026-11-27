@@ -91,6 +91,7 @@ pnpm db:pruebas
 ```bash
 pnpm test     # Vitest: shared, api (unitarias + integración con smo_pruebas) y web
 pnpm lint     # ESLint
+pnpm typecheck  # TypeScript en todo el código, incluidas las pruebas
 pnpm format   # Prettier
 pnpm build    # compila shared, api y web
 ```

@@ -49,6 +49,9 @@ jobs:
           done
       - name: Lint
         run: pnpm lint
+      # Revisa tipos también en los archivos de prueba (el build solo compila src/)
+      - name: Tipos
+        run: pnpm typecheck
       - name: Pruebas
         run: pnpm test
       - name: Build

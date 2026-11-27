@@ -11,6 +11,7 @@
     "dev": "pnpm --filter @smo/shared build && concurrently -k -n shared,api,web -c yellow,blue,magenta \"pnpm --filter @smo/shared dev\" \"pnpm --filter @smo/api dev\" \"pnpm --filter @smo/web dev\"",
     "build": "pnpm -r build",
     "lint": "eslint . --max-warnings 0",
+    "typecheck": "pnpm --filter @smo/shared build && pnpm -r typecheck",
     "test": "pnpm --filter @smo/shared build && pnpm -r test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
