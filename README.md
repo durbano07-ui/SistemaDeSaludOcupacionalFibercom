@@ -95,6 +95,10 @@ pnpm format   # Prettier
 pnpm build    # compila shared, api y web
 ```
 
+Pruebas de caja blanca (camino básico y cobertura de ramas): plan y resultados en
+[`docs/pruebas/caja-blanca.md`](docs/pruebas/caja-blanca.md). Cobertura:
+`pnpm --filter @smo/shared test:cobertura` y `pnpm --filter @smo/api test:cobertura`.
+
 Cada commit pasa por lint-staged (ESLint + Prettier) y commitlint (Conventional Commits:
 `feat:`, `fix:`, `chore:`, `docs:`, `test:`…).
 
