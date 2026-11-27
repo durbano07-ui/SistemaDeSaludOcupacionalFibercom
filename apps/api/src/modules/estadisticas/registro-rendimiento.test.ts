@@ -39,3 +39,24 @@ describe('RegistroRendimiento', () => {
     expect(r.promedioMs).toBe(80);
   });
 });
+
+describe('Caja blanca · RegistroRendimiento.registrar — muestreo de reservorio', () => {
+  it('pasadas las 2000 muestras del minuto sigue contando todo, pero guarda como máximo 2000', () => {
+    const registro = new RegistroRendimiento();
+    const ahora = Date.UTC(2026, 10, 26, 15, 0, 10);
+    for (let i = 0; i < 2_500; i++) registro.registrar(i < 2_000 ? 10 : 1_000, ahora);
+
+    const r = registro.resumen('1h', ahora);
+    // Cantidad y promedio son exactos aunque se muestree para el percentil
+    expect(r.peticiones).toBe(2_500);
+    expect(r.promedioMs).toBe(208);
+    expect(r.p95Ms === 10 || r.p95Ms === 1_000).toBe(true);
+  });
+});
+
+describe('Caja blanca · RegistroRendimiento.resumen — sin peticiones', () => {
+  it('sin datos el promedio y el p95 son null (no 0)', () => {
+    const r = new RegistroRendimiento().resumen('24h');
+    expect(r).toMatchObject({ peticiones: 0, promedioMs: null, p95Ms: null });
+  });
+});
