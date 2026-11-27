@@ -97,7 +97,8 @@ pnpm build    # compila shared, api y web
 ```
 
 Pruebas de caja blanca (camino básico y cobertura de ramas): plan y resultados en
-[`docs/pruebas/caja-blanca.md`](docs/pruebas/caja-blanca.md). Cobertura:
+[`docs/pruebas/caja-blanca.md`](docs/pruebas/caja-blanca.md). Pruebas de caja negra (equivalencia,
+límites, tablas de decisión, estados): [`docs/pruebas/caja-negra.md`](docs/pruebas/caja-negra.md). Cobertura:
 `pnpm --filter @smo/shared test:cobertura` y `pnpm --filter @smo/api test:cobertura`.
 
 Cada commit pasa por lint-staged (ESLint + Prettier) y commitlint (Conventional Commits:
