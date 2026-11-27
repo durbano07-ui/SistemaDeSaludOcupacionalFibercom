@@ -308,7 +308,7 @@ describe('Reportes (integración)', () => {
       .expect('Content-Disposition', /reporte-consolidado-anual-2025\.xlsx/);
 
     const libro = new ExcelJS.Workbook();
-    await libro.xlsx.load(respuesta.body as Buffer);
+    await libro.xlsx.load(respuesta.body as Parameters<typeof libro.xlsx.load>[0]);
     const hoja = libro.worksheets[0]!;
     expect(hoja.getCell('A1').value).toBe('CONSOLIDADO ANUAL DE ATENCIONES');
     expect(hoja.getCell('A2').value).toBe(
@@ -335,7 +335,7 @@ describe('Reportes (integración)', () => {
       .parse(binario)
       .expect(200);
     const libroAnual = new ExcelJS.Workbook();
-    await libroAnual.xlsx.load(anual.body as Buffer);
+    await libroAnual.xlsx.load(anual.body as Parameters<typeof libroAnual.xlsx.load>[0]);
     expect(libroAnual.worksheets.map((h) => h.name)).toHaveLength(12);
     expect(libroAnual.worksheets[1]!.name).toBe('Febrero');
 
