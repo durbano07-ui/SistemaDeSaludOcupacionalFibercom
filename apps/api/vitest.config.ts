@@ -24,5 +24,12 @@ export default defineConfig({
     env: { NODE_ENV: 'test', LOG_LEVEL: 'silent', DATABASE_URL: urlBasePruebas() ?? '' },
     // Varias suites escriben en la misma base: se ejecutan de a una.
     fileParallelism: false,
+    // Cobertura (caja blanca): pnpm --filter @smo/api test:cobertura
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.ts'],
+      exclude: ['src/**/*.test.ts', 'src/generated/**', 'src/main.ts'],
+      reporter: ['text', 'html', 'json-summary'],
+    },
   },
 });
