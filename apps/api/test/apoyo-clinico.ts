@@ -59,7 +59,7 @@ export function cedulaNueva(): string {
 export async function usuarioSistema(
   prisma: PrismaService,
   nombreUsuario: string,
-  rol: 'medico_ocupacional' | 'apoyo',
+  rol: 'medico_ocupacional' | 'apoyo' | 'administrador',
   cedula: string,
 ): Promise<number> {
   const { idBase, idCargo } = await organizacion(prisma);
