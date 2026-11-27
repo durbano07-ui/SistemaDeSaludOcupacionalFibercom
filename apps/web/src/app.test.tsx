@@ -61,7 +61,10 @@ describe('Rutas protegidas', () => {
   it('con sesión, /login lleva al inicio del rol', async () => {
     const { router } = renderizarEn('/login', { usuario: USUARIO_ADMIN });
 
-    expect(await screen.findByRole('heading', { name: 'Estadísticas' })).toBeInTheDocument();
+    // Estadísticas se carga de forma perezosa: la primera vez hay que esperar su descarga
+    expect(
+      await screen.findByRole('heading', { name: 'Estadísticas' }, { timeout: 5_000 }),
+    ).toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/admin/estadisticas');
   });
 });
@@ -131,7 +134,10 @@ describe('Pantalla del médico', () => {
 
     await usuario.click(await screen.findByRole('button', { name: 'Reportes' }));
 
-    expect(await screen.findByRole('tab', { name: 'Registro mensual' })).toBeInTheDocument();
+    // Reportes se carga de forma perezosa: la primera vez hay que esperar su descarga
+    expect(
+      await screen.findByRole('tab', { name: 'Registro mensual' }, { timeout: 5_000 }),
+    ).toBeInTheDocument();
     expect(router.state.location.pathname).toBe('/medico/reportes');
     expect(screen.queryByText('No se ha seleccionado ningún paciente')).not.toBeInTheDocument();
   });
